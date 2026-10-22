@@ -27,6 +27,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -212,10 +213,12 @@ fun XtreamContent(vm: AppViewModel) {
             items(vm.xtreamItems, key = { it.id }) { item ->
                 XtreamRow(
                     item = item,
+                    now = vm.xtreamNow[item.id],
                     onClick = {
                         if (item.section == XtreamSection.LIVE) vm.watchXtream(item) else vm.openInfo(item)
                     },
                     onCatchup = { vm.openCatchup(item) },
+                    onNeedEpg = { vm.ensureXtreamEpg(item) },
                 )
             }
             if (vm.xtreamItems.isEmpty() && !vm.xtreamLoading && error == null) {
@@ -322,7 +325,16 @@ private fun time(epochSec: Long): String =
     DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault()).format(Instant.ofEpochSecond(epochSec))
 
 @Composable
-private fun XtreamRow(item: XtreamItem, onClick: () -> Unit, onCatchup: () -> Unit) {
+private fun XtreamRow(
+    item: XtreamItem,
+    now: XtreamEpg?,
+    onClick: () -> Unit,
+    onCatchup: () -> Unit,
+    onNeedEpg: () -> Unit,
+) {
+    LaunchedEffect(item.id) {
+        if (item.section == XtreamSection.LIVE) onNeedEpg()
+    }
     GlassCard(Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable(onClick = onClick), padding = 12.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             ChannelLogo(item.icon, item.name, size = 46.dp)
@@ -330,10 +342,12 @@ private fun XtreamRow(item: XtreamItem, onClick: () -> Unit, onCatchup: () -> Un
             Column(Modifier.weight(1f)) {
                 Text(item.name, color = Ink.Text, style = MaterialTheme.typography.titleSmall)
                 Text(
-                    when (item.section) {
-                        XtreamSection.LIVE -> "Live · ${item.id}"
-                        XtreamSection.MOVIES -> "Film · ${item.extension.ifBlank { "video" }}"
-                        XtreamSection.SERIES -> "Serie · bekijk afleveringen"
+                    when {
+                        item.section == XtreamSection.LIVE && now != null ->
+                            "${time(now.startSec)}–${time(now.endSec)} · ${now.title}"
+                        item.section == XtreamSection.LIVE -> "Live"
+                        item.section == XtreamSection.MOVIES -> "Film · ${item.extension.ifBlank { "video" }}"
+                        else -> "Serie · bekijk afleveringen"
                     },
                     color = Ink.Subtle,
                     style = MaterialTheme.typography.bodySmall,

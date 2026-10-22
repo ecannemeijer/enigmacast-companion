@@ -246,7 +246,7 @@ The TV repository itself is **not modified** by this process.
 
 ## Version, update JSON and sideload
 
-- **Version:** `1.0.0-beta.13`, build `111` (`versionCode`).
+- **Version:** `1.0.0-beta.14`, build `111` (`versionCode`).
 - The app shows this in **More** under the title and in **About this app**.
 - **Sideload APK:** `dist/enigmacast-companion.apk`.
 - **In-app update:** the app checks the combined manifest on startup and **More -> Check
@@ -269,4 +269,5 @@ The TV repository itself is **not modified** by this process.
    been proven with an audio stream.
 2. Run a full multi-field end-to-end test on receiver setup and the TV PIN on hardware.
 3. Test NSD on a real home network and the TLS route on physical TV boxes.
+
 

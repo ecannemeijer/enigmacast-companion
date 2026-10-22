@@ -56,8 +56,7 @@ fun IptvScreen(vm: AppViewModel) {
     val account = vm.xtreamAccount
     val hasM3u = vm.iptvUrl.isNotBlank()
 
-    LaunchedEffect(Unit) { vm.ensureIptvLoaded() }
-
+    LaunchedEffect(Unit) { vm.prepareIptv() }
     Column(Modifier.fillMaxSize()) {
         TopBar(
             "IPTV",

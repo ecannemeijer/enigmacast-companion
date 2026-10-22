@@ -8,6 +8,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.net.ConnectivityManager
+import android.net.Network
 import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +45,7 @@ import com.enigmacast.domain.model.ReceiverConfig
 import com.enigmacast.domain.settingsimport.M3uEntry
 import com.enigmacast.domain.tuner.NowEvent
 import com.enigmacast.domain.xtream.Catchup
+import com.enigmacast.domain.xtream.airingAt
 import com.enigmacast.domain.xtream.XtreamAccount
 import com.enigmacast.domain.xtream.XtreamCategory
 import com.enigmacast.domain.xtream.XtreamEpisode
@@ -220,6 +223,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var xtreamItems by mutableStateOf<List<XtreamItem>>(emptyList())
         private set
+    var xtreamNow by mutableStateOf<Map<String, XtreamEpg>>(emptyMap())
+        private set
+    private val xtreamEpgRequested = mutableSetOf<String>()
     var xtreamSection by mutableStateOf(XtreamSection.LIVE)
         private set
     var xtreamEpisodes by mutableStateOf<List<XtreamEpisode>>(emptyList())
@@ -270,8 +276,24 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private var formJob: Job? = null
     private var toastToken = 0L
     private var nextId = 0
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            // Connectivity callbacks run off main; Compose state must be updated there.
+            viewModelScope.launch {
+                container.iptv.evictConnections()
+                container.xtream.evictConnections()
+                if (screen == AppScreen.IPTV && iptvEntries.isEmpty() && !iptvLoading && !xtreamLoading) {
+                    ensureIptvLoaded()
+                }
+            }
+        }
+    }
 
     init {
+        runCatching {
+            getApplication<Application>().getSystemService(ConnectivityManager::class.java)
+                ?.registerDefaultNetworkCallback(networkCallback)
+        }
         viewModelScope.launch {
             active.flatMapLatest { it.events }.collect { envelope ->
                 runCatching { handleEvent(envelope) }
@@ -707,8 +729,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun ensureIptvLoaded() {
         if (xtreamAccount != null) return
-        when (iptvKind) {
-            "XTREAM" -> if (xtreamServer.isNotBlank() && xtreamUser.isNotBlank() &&
+        when (iptvKind) {            "XTREAM" -> if (xtreamServer.isNotBlank() && xtreamUser.isNotBlank() &&
                 xtreamPassword.isNotBlank() && !xtreamLoading
             ) {
                 loginXtream(xtreamServer, xtreamUser, xtreamPassword)
@@ -719,6 +740,17 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             } else if (iptvUrl.isNotBlank() && iptvEntries.isEmpty() && !iptvLoading) {
                 loadIptv()
             }
+        }
+    }
+
+    /** Opened from the IPTV tab: drop sockets from a previous Wi-Fi network and retry a failed load. */
+    fun prepareIptv() {
+        container.iptv.evictConnections()
+        container.xtream.evictConnections()
+        if (xtreamAccount == null) {
+            ensureIptvLoaded()
+        } else if (xtreamItems.isEmpty() && !xtreamLoading && xtreamError != null) {
+            loadXtreamCategories(xtreamSection)
         }
     }
 
@@ -887,6 +919,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val account = xtreamAccount ?: return
         xtreamCategory = category
         xtreamItems = emptyList()
+        xtreamNow = emptyMap()
+        synchronized(xtreamEpgRequested) { xtreamEpgRequested.clear() }
         xtreamLoading = true
         xtreamError = null
         viewModelScope.launch {
@@ -895,6 +929,26 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 onFailure = { xtreamError = it.message ?: "Streams laden mislukt" },
             )
             xtreamLoading = false
+        }
+    }
+
+    /** Fetches now/next only for the live rows the list actually shows. */
+    fun ensureXtreamEpg(item: XtreamItem) {
+        if (item.section != XtreamSection.LIVE) return
+        val account = xtreamAccount ?: return
+        synchronized(xtreamEpgRequested) {
+            if (xtreamNow.containsKey(item.id) || !xtreamEpgRequested.add(item.id)) return
+        }
+        viewModelScope.launch {
+            container.xtream.epg(account, item.id).fold(
+                onSuccess = { events ->
+                    val current = events.airingAt(System.currentTimeMillis() / 1000)
+                    if (current != null) xtreamNow = xtreamNow + (item.id to current)
+                },
+                onFailure = {
+                    synchronized(xtreamEpgRequested) { xtreamEpgRequested.remove(item.id) }
+                },
+            )
         }
     }
 
@@ -1619,6 +1673,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             delay(1_800)
             if (toast?.token == token) toast = null
         }
+    }
+
+    override fun onCleared() {
+        runCatching {
+            getApplication<Application>().getSystemService(ConnectivityManager::class.java)
+                ?.unregisterNetworkCallback(networkCallback)
+        }
+        super.onCleared()
     }
 
     private fun send(envelope: Envelope) {

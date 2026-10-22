@@ -22,6 +22,11 @@ class XtreamClient {
         .readTimeout(20, TimeUnit.SECONDS)
         .build()
 
+    /** Drop keep-alive sockets after a Wi-Fi/mobile switch; the next call uses the new network. */
+    fun evictConnections() {
+        client.connectionPool.evictAll()
+    }
+
     suspend fun login(server: String, username: String, password: String): Result<XtreamAccount> =
         withContext(Dispatchers.IO) {
             runCatching {

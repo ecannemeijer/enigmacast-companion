@@ -16,6 +16,11 @@ class IptvClient {
         .readTimeout(20, TimeUnit.SECONDS)
         .build()
 
+    /** Drop keep-alive sockets after a Wi-Fi/mobile switch; the next load uses the new network. */
+    fun evictConnections() {
+        client.connectionPool.evictAll()
+    }
+
     suspend fun load(url: String): Result<List<M3uEntry>> = withContext(Dispatchers.IO) {
         runCatching {
             val request = Request.Builder().url(url).build()

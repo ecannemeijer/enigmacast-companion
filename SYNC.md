@@ -542,3 +542,8 @@ emulator faalt op de H.264-decoder, niet op de app.
 - TV: ACTION_SCREEN_OFF and TRIM_MEMORY_UI_HIDDEN stop every player and close stream/network connections, including PiP.
 - Foreground/screen-on evicts stale OkHttp keep-alive sockets. HTTP status is logged with player errors.
 - Version 1.0.0-beta.83 / build 86; TV tests 929, 0 failures.
+
+## Release 1.0.0-beta.14
+- IPTV clients evict keep-alive sockets on network changes; IPTV tab refreshes a failed source when it opens. The stored Xtream/M3U source is used without the TV bridge.
+- Xtream live rows load now/next EPG per visible channel (get_short_epg) and no longer show the numeric stream id.
+- Version 1.0.0-beta.14 / build 113; Companion 671 tests, 0 failures, 1 skipped.
