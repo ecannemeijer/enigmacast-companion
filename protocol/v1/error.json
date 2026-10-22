@@ -1,0 +1,10 @@
+{
+  "v": 1,
+  "id": "c-102",
+  "type": "error",
+  "payload": {
+    "code": "AUTH_REPLAY",
+    "message": "Nonce already used",
+    "retryable": false
+  }
+}

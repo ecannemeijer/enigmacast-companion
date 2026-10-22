@@ -1,0 +1,34 @@
+{
+  "v": 1,
+  "seq": 58,
+  "type": "form",
+  "payload": {
+    "formId": "receiver",
+    "title": "Ontvanger",
+    "revision": 7,
+    "fields": [
+      {
+        "id": "name",
+        "label": "Naam",
+        "type": "TEXT",
+        "value": "Woonkamer",
+        "masked": false,
+        "sensitive": false,
+        "maxLength": 40,
+        "options": [],
+        "required": true
+      },
+      {
+        "id": "password",
+        "label": "Wachtwoord",
+        "type": "PASSWORD",
+        "masked": true,
+        "sensitive": true,
+        "maxLength": 0,
+        "options": [],
+        "required": false
+      }
+    ],
+    "errors": {}
+  }
+}

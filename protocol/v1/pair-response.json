@@ -1,0 +1,12 @@
+{
+  "deviceId": "d41d8cd98f00b204e9800998ecf8427e",
+  "token": "example-token-32-bytes-base64url",
+  "role": "member",
+  "tv": {
+    "id": "6f1c2a9e-0000-4000-8000-000000000001",
+    "name": "Woonkamer TV",
+    "app": "1.0.0-beta.72"
+  },
+  "api": "v1",
+  "capabilities": ["key", "nav", "zap", "volume", "text.form", "settings", "profiles", "photo", "state", "power"]
+}

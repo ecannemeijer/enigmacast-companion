@@ -1,0 +1,12 @@
+{
+  "v": 1,
+  "id": "c-101",
+  "type": "cmd.key",
+  "ts": 1761100000123,
+  "payload": {
+    "key": "DPAD_DOWN",
+    "phase": "DOWN",
+    "repeat": 0,
+    "long": false
+  }
+}

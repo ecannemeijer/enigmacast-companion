@@ -1,0 +1,24 @@
+{
+  "v": 1,
+  "seq": 57,
+  "type": "state.player",
+  "ts": 1761100001000,
+  "payload": {
+    "source": "enigma2",
+    "channel": {
+      "ref": "1:0:19:4B6F:2E:19:C00000:0:0:0:",
+      "name": "NPO 1 HD",
+      "number": 1,
+      "picon": "/picon/1_0_19_4B6F_2E_19_C00000_0_0_0.png"
+    },
+    "now": {
+      "title": "NOS Journaal",
+      "startMs": 1761099600000,
+      "endMs": 1761101400000,
+      "progress": 0.42
+    },
+    "player": {"playing": true, "paused": false, "positionMs": 0, "durationMs": 0, "bufferedMs": 0},
+    "tuner": {"used": 1, "total": 2, "status": "PLAYING"},
+    "route": "home"
+  }
+}

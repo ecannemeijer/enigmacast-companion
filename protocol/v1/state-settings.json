@@ -1,0 +1,48 @@
+{
+  "v": 1,
+  "seq": 61,
+  "type": "state.settings",
+  "payload": {
+    "revision": 3,
+    "entries": [
+      {
+        "path": "navigationSounds",
+        "label": "Navigation sounds",
+        "description": "Click sound when moving with the remote.",
+        "category": "Weergave",
+        "type": "BOOL",
+        "value": true,
+        "options": [],
+        "dangerous": false,
+        "requiresRestart": false
+      },
+      {
+        "path": "osdSkin",
+        "label": "GUI skins",
+        "description": "Choose the look of the app.",
+        "category": "Weergave",
+        "type": "CHOICE",
+        "value": "GLASS_EARTH",
+        "options": [
+          { "value": "GLASS_EARTH", "label": "Glass Earth" },
+          { "value": "GLASS_WAVE", "label": "Glass Wave" }
+        ],
+        "dangerous": false,
+        "requiresRestart": false
+      },
+      {
+        "path": "osd.transparency",
+        "label": "Transparency",
+        "description": "How see-through the channel banner is.",
+        "category": "Weergave",
+        "type": "NUMBER",
+        "value": 10,
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "dangerous": false,
+        "requiresRestart": false
+      }
+    ]
+  }
+}

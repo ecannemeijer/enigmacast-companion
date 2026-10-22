@@ -1,0 +1,24 @@
+{
+  "v": 1,
+  "seq": 0,
+  "type": "hello",
+  "ts": 1761100000000,
+  "payload": {
+    "tv": {
+      "id": "6f1c2a9e-0000-4000-8000-000000000001",
+      "name": "Woonkamer TV",
+      "app": "1.0.0-beta.72"
+    },
+    "api": "v1",
+    "capabilities": ["key", "nav", "zap", "volume", "text.form", "settings", "profiles", "photo", "state", "power"],
+    "screen": {"app": "dashboard", "section": "home"},
+    "profile": {
+      "activeId": "default",
+      "profiles": [
+        {"id": "default", "name": "Thuis", "avatar": 3, "photoStamp": 0, "hasPin": false}
+      ]
+    },
+    "receiver": {"id": "sf8008", "name": "SF8008", "online": true, "mode": "own_tuner"},
+    "settingsRevision": 42
+  }
+}

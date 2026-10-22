@@ -1,0 +1,13 @@
+{
+  "v": 1,
+  "id": "c-110",
+  "type": "cmd.settings",
+  "payload": {
+    "baseRevision": 42,
+    "ops": [
+      {"path": "osdSkin", "value": "GLASS_EARTH"},
+      {"path": "playback.hdmiPassthrough", "value": false}
+    ],
+    "confirm": false
+  }
+}

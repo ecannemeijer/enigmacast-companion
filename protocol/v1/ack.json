@@ -1,0 +1,9 @@
+{
+  "v": 1,
+  "id": "c-101",
+  "type": "ack",
+  "payload": {
+    "ok": true,
+    "latencyMs": 11
+  }
+}

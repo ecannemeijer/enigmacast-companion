@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Alleen het venster; de echte vormgeving doet Compose (ui/theme). -->
+    <style name="Theme.EnigmaCastCompanion" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/enigmacast_canvas</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
