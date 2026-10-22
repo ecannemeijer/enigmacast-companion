@@ -530,3 +530,10 @@ emulator faalt op de H.264-decoder, niet op de app.
 - VOD-extensie via get_vod_info (voorkomt mp4/mkv 404).
 - Speler: OSD verbergt na 5 seconden, tik om te tonen; VOD-tijdlijn, -10 s en +30 s; live zonder seek.
 - Companion 671 tests, TV 929 tests.
+
+## Release 1.0.0-beta.13
+
+- Companion player recovery: limited Media3 retry policy, stall watchdog for buffering with and without active loading, retry with backoff, live restart at the live edge, VOD resume at the last position, permanent 4xx/parse errors not retried, and network-available recovery. Resets the retry budget after 30 seconds of stable playback.
+- TV IPTV recovery: same retry/watchdog/network pattern for Xtream live, films and series. Live IPTV now also runs the stall ticker; STATE_ENDED on a live stream triggers a bounded reconnect.
+- Version 1.0.0-beta.13 / build 112; TV 1.0.0-beta.82 / build 85.
+- Companion 671 tests, 0 failures, 1 skipped; TV 929 tests, 0 failures.

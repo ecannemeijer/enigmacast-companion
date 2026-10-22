@@ -1,10 +1,15 @@
+@file:OptIn(androidx.media3.common.util.UnstableApi::class)
+
 package com.enigmacast.companion.ui.screens
 
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
+import android.net.ConnectivityManager
+import android.net.Network
 import android.os.Build
+import android.os.SystemClock
 import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -49,6 +54,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,19 +67,36 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.MediaItem
+import androidx.media3.common.ParserException
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.upstream.DefaultLoadErrorHandlingPolicy
+import androidx.media3.exoplayer.upstream.LoadErrorHandlingPolicy
 import androidx.media3.ui.compose.PlayerSurface
 import com.enigmacast.companion.ui.AppViewModel
 import com.enigmacast.companion.ui.components.ChannelLogo
 import com.enigmacast.companion.ui.components.Pill
 import com.enigmacast.companion.ui.theme.Ink
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+/** Limited retries with backoff for transient HTTP/network failures; no retry on auth/4xx/parse. */
+private class CompanionLoadErrorPolicy : DefaultLoadErrorHandlingPolicy(5) {
+    override fun getRetryDelayMsFor(loadErrorInfo: LoadErrorHandlingPolicy.LoadErrorInfo): Long {
+        val code = (loadErrorInfo.exception as? HttpDataSource.InvalidResponseCodeException)?.responseCode
+        if (code == 401 || code == 403 || code == 404) return androidx.media3.common.C.TIME_UNSET
+        if (loadErrorInfo.exception is ParserException) return androidx.media3.common.C.TIME_UNSET
+        return (700L * loadErrorInfo.errorCount).coerceAtMost(6_000L)
+    }
+}
+
 
 @Composable
 fun PlayerScreen(vm: AppViewModel) {
@@ -105,6 +128,72 @@ private fun StreamPlayer(vm: AppViewModel) {
     var durationMs by remember { mutableLongStateOf(0L) }
     var seeking by remember { mutableStateOf(false) }
     var seekPositionMs by remember { mutableLongStateOf(0L) }
+    val scope = rememberCoroutineScope()
+    var retryJob by remember { mutableStateOf<Job?>(null) }
+    var retryAttempts by remember { mutableIntStateOf(0) }
+    var lastKnownPositionMs by remember { mutableLongStateOf(0L) }
+    var lastAdvanceAt by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
+    var stableSince by remember { mutableLongStateOf(0L) }
+
+    fun httpStatus(error: Throwable): Int? {
+        var current: Throwable? = error
+        var depth = 0
+        while (current != null && depth < 8) {
+            if (current is HttpDataSource.InvalidResponseCodeException) return current.responseCode
+            current = current.cause
+            depth++
+        }
+        return null
+    }
+
+    fun isPermanent(error: PlaybackException): Boolean {
+        val status = httpStatus(error)
+        if (status != null && status in 400..499) return true
+        return error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED ||
+            error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED ||
+            error.errorCode == PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND
+    }
+
+    fun prepareMedia(startAt: Long, resetBudget: Boolean = false) {
+        if (vm.playbackUrl.isBlank()) return
+        if (resetBudget) {
+            retryJob?.cancel()
+            retryAttempts = 0
+        }
+        error = null
+        val dataSource = DefaultHttpDataSource.Factory()
+            .setDefaultRequestProperties(vm.playbackHeaders)
+            .setAllowCrossProtocolRedirects(true)
+            .setConnectTimeoutMs(10_000)
+            .setReadTimeoutMs(20_000)
+        val source = DefaultMediaSourceFactory(dataSource)
+            .setLoadErrorHandlingPolicy(CompanionLoadErrorPolicy())
+            .createMediaSource(MediaItem.fromUri(vm.playbackUrl))
+        player.setMediaSource(source)
+        if (startAt > 0) player.seekTo(startAt)
+        player.prepare()
+        player.playWhenReady = true
+        lastKnownPositionMs = startAt.coerceAtLeast(0L)
+        lastAdvanceAt = SystemClock.elapsedRealtime()
+        stableSince = 0L
+    }
+
+    fun scheduleRecovery(reason: String, position: Long) {
+        if (retryJob?.isActive == true) return
+        if (retryAttempts >= 5) {
+            error = "Stream herstelt niet automatisch"
+            return
+        }
+        val attempt = retryAttempts++
+        val waitMs = (1_000L shl attempt.coerceAtMost(3)).coerceAtMost(8_000L)
+        lastAdvanceAt = SystemClock.elapsedRealtime()
+        retryJob = scope.launch {
+            delay(waitMs)
+            if (vm.playbackUrl.isBlank()) return@launch
+            val target = if (vm.playbackLive) 0L else position.coerceAtLeast(0L)
+            prepareMedia(target)
+        }
+    }
 
     fun revealOsd() {
         osdVisible = true
@@ -132,11 +221,22 @@ private fun StreamPlayer(vm: AppViewModel) {
                     revealOsd()
                 }
                 playing = isPlaying
+                if (isPlaying) {
+                    if (stableSince == 0L) stableSince = SystemClock.elapsedRealtime()
+                } else {
+                    stableSince = 0L
+                }
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
                 buffering = playbackState == Player.STATE_BUFFERING
+                if (playbackState == Player.STATE_READY && player.isPlaying) {
+                    if (stableSince == 0L) stableSince = SystemClock.elapsedRealtime()
+                }
                 if (playbackState == Player.STATE_ENDED) {
+                    if (vm.playbackLive) {
+                        scheduleRecovery("live stream ended", 0L)
+                    }
                     runCatching { vm.recordProgress(player.duration, player.duration, force = true) }
                     revealOsd()
                 }
@@ -151,10 +251,13 @@ private fun StreamPlayer(vm: AppViewModel) {
 
             override fun onPlayerError(playerError: PlaybackException) {
                 error = "${playerError.errorCodeName}: ${playerError.message.orEmpty()}"
+                if (isPermanent(playerError)) return
+                scheduleRecovery(playerError.errorCodeName, player.currentPosition)
             }
         }
         player.addListener(listener)
         onDispose {
+            retryJob?.cancel()
             runCatching { vm.recordProgress(player.currentPosition, player.duration, force = true) }
             player.removeListener(listener)
             player.release()
@@ -163,18 +266,39 @@ private fun StreamPlayer(vm: AppViewModel) {
 
     LaunchedEffect(player) {
         while (true) {
-            delay(5_000)
-            runCatching { vm.recordProgress(player.currentPosition, player.duration) }
+            val now = SystemClock.elapsedRealtime()
+            val position = player.currentPosition.coerceAtLeast(0L)
+            if (player.playWhenReady && position > lastKnownPositionMs + 500) {
+                lastKnownPositionMs = position
+                lastAdvanceAt = now
+            }
+            if (!seeking) {
+                positionMs = position
+                durationMs = player.duration.takeIf { it > 0 } ?: 0L
+            }
+            if (player.playWhenReady &&
+                player.playbackState == Player.STATE_BUFFERING &&
+                now - lastAdvanceAt >= 15_000L
+            ) {
+                scheduleRecovery("no progress while buffering", lastKnownPositionMs)
+            }
+            if (player.isPlaying) {
+                if (stableSince == 0L) stableSince = now
+                if (now - stableSince >= 30_000L) {
+                    retryAttempts = 0
+                    stableSince = now
+                }
+            } else {
+                stableSince = 0L
+            }
+            delay(500)
         }
     }
 
     LaunchedEffect(player) {
         while (true) {
-            if (!seeking) {
-                positionMs = player.currentPosition.coerceAtLeast(0L)
-                durationMs = player.duration.takeIf { it > 0 } ?: 0L
-            }
-            delay(500)
+            delay(5_000)
+            runCatching { vm.recordProgress(player.currentPosition, player.duration) }
         }
     }
 
@@ -232,16 +356,26 @@ private fun StreamPlayer(vm: AppViewModel) {
 
     LaunchedEffect(vm.playbackUrl, vm.playbackStartMs) {
         if (vm.playbackUrl.isBlank()) return@LaunchedEffect
-        error = null
-        val dataSource = DefaultHttpDataSource.Factory()
-            .setDefaultRequestProperties(vm.playbackHeaders)
-            .setAllowCrossProtocolRedirects(true)
-        val source = DefaultMediaSourceFactory(dataSource)
-            .createMediaSource(MediaItem.fromUri(vm.playbackUrl))
-        player.setMediaSource(source)
-        if (vm.playbackStartMs > 0) player.seekTo(vm.playbackStartMs)
-        player.prepare()
-        player.playWhenReady = true
+        prepareMedia(vm.playbackStartMs, resetBudget = true)
+    }
+
+    DisposableEffect(context, player) {
+        val manager = context.getSystemService(ConnectivityManager::class.java)
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                // Connectivity callbacks run on a binder thread; ExoPlayer must stay on main.
+                scope.launch {
+                    if (vm.playbackUrl.isBlank()) return@launch
+                    if (player.currentMediaItem == null) return@launch
+                    if (player.playbackState == Player.STATE_IDLE) return@launch
+                    retryJob?.cancel()
+                    retryAttempts = 0
+                    scheduleRecovery("network available", lastKnownPositionMs)
+                }
+            }
+        }
+        runCatching { manager?.registerDefaultNetworkCallback(callback) }
+        onDispose { runCatching { manager?.unregisterNetworkCallback(callback) } }
     }
 
     val isLive = vm.playbackLive ||

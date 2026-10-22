@@ -4,8 +4,8 @@
 
 | Veld | Waarde |
 |---|---|
-| `versionName` | `1.0.0-beta.12` |
-| `versionCode` / build | `111` |
+| `versionName` | `1.0.0-beta.13` |
+| `versionCode` / build | `112` |
 | Package | `com.enigmacast.companion` |
 | Sideload-APK | `dist/enigmacast-companion.apk` |
 
@@ -25,8 +25,8 @@ Er zijn twee bestanden:
 
    ```json
    {
-     "versionCode": 111,
-     "versionName": "1.0.0-beta.12",
+     "versionCode": 112,
+     "versionName": "1.0.0-beta.13",
      "apkUrl": "https://update.velixatv.com/enigmacast-companion.apk",
      "notes": "â€¦",
      "sideloadFile": "enigmacast-companion.apk"
@@ -39,13 +39,13 @@ Er zijn twee bestanden:
 
    ```json
    {
-     "versionCode": 84,
-     "versionName": "1.0.0-beta.81",
+     "versionCode": 85,
+     "versionName": "1.0.0-beta.82",
      "apkUrl": "https://update.velixatv.com/enigmacast.apk",
      "notes": "â€¦",
      "companion": {
-       "versionCode": 111,
-       "versionName": "1.0.0-beta.12",
+       "versionCode": 112,
+       "versionName": "1.0.0-beta.13",
        "apkUrl": "https://update.velixatv.com/enigmacast-companion.apk",
        "notes": "â€¦",
        "sideloadFile": "enigmacast-companion.apk"
@@ -86,6 +86,8 @@ adb install -r "dist\enigmacast-companion.apk"
 ```
 
 Of open de APK op de telefoon en sta installatie uit onbekende bronnen toe.
+
+
 
 
 

@@ -1,6 +1,6 @@
 ﻿# EnigmaCast Companion â€” mobiele app
 
-**Versie 1.0.0-beta.12 Â· build 111.** De app toont dit in **Meer** en **Over deze app**.
+**Versie 1.0.0-beta.13 Â· build 112.** De app toont dit in **Meer** en **Over deze app**.
 Sideload-APK: `dist/enigmacast-companion.apk`; zie
 `docs/updates.md`.
 
@@ -129,6 +129,7 @@ bewezen; video op echte hardware volgt.
 2. Kijkgeschiedenis/favorieten tussen TV en telefoon delen.
 3. PIN-prompt en `GET`/`DELETE` van foto's.
 4. Video op een fysieke ontvanger/provider testen; NSD op een echt netwerk.
+
 
 
 
