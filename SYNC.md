@@ -537,3 +537,8 @@ emulator faalt op de H.264-decoder, niet op de app.
 - TV IPTV recovery: same retry/watchdog/network pattern for Xtream live, films and series. Live IPTV now also runs the stall ticker; STATE_ENDED on a live stream triggers a bounded reconnect.
 - Version 1.0.0-beta.13 / build 112; TV 1.0.0-beta.82 / build 85.
 - Companion 671 tests, 0 failures, 1 skipped; TV 929 tests, 0 failures.
+
+## Release 1.0.0-beta.83
+- TV: ACTION_SCREEN_OFF and TRIM_MEMORY_UI_HIDDEN stop every player and close stream/network connections, including PiP.
+- Foreground/screen-on evicts stale OkHttp keep-alive sockets. HTTP status is logged with player errors.
+- Version 1.0.0-beta.83 / build 86; TV tests 929, 0 failures.

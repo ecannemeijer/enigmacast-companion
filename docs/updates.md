@@ -39,8 +39,8 @@ Er zijn twee bestanden:
 
    ```json
    {
-     "versionCode": 85,
-     "versionName": "1.0.0-beta.82",
+     "versionCode": 86,
+     "versionName": "1.0.0-beta.83",
      "apkUrl": "https://update.velixatv.com/enigmacast.apk",
      "notes": "â€¦",
      "companion": {
@@ -86,6 +86,7 @@ adb install -r "dist\enigmacast-companion.apk"
 ```
 
 Of open de APK op de telefoon en sta installatie uit onbekende bronnen toe.
+
 
 
 
