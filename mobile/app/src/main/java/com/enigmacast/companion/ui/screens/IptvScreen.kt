@@ -83,7 +83,7 @@ fun IptvScreen(vm: AppViewModel) {
         }
         when {
             account != null && !setup -> {
-                SourceBar("Xtream · ${vm.iptvProviderName.ifBlank { account.name }}", "Wijzigen") { setup = true }
+                SourceBar("Xtream · ${vm.iptvProviderName.ifBlank { account.name }}", "Wijzigen", { setup = true }, vm::reloadIptv)
                 XtreamContent(vm)
             }
             hasM3u && !setup -> {
@@ -101,7 +101,7 @@ fun IptvScreen(vm: AppViewModel) {
 }
 
 @Composable
-private fun SourceBar(source: String, action: String, onAction: () -> Unit) {
+private fun SourceBar(source: String, action: String, onAction: () -> Unit, onReload: (() -> Unit)? = null) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -112,6 +112,11 @@ private fun SourceBar(source: String, action: String, onAction: () -> Unit) {
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.weight(1f),
         )
+        if (onReload != null) {
+            TextButton(onClick = onReload) {
+                Text("Herladen", color = Ink.Accent, fontSize = 12.sp)
+            }
+        }
         TextButton(onClick = onAction) {
             Text(action, color = Ink.Accent, fontSize = 12.sp)
         }
@@ -124,7 +129,7 @@ private fun M3uContent(vm: AppViewModel, onEdit: () -> Unit) {
         vm.iptvGroup == null || entry.groups.contains(vm.iptvGroup)
     }
     Column(Modifier.fillMaxSize()) {
-        SourceBar("M3U · ${vm.iptvProviderName.ifBlank { vm.iptvUrl.substringAfter("//").substringBefore("/") }}", "Wijzigen", onEdit)
+        SourceBar("M3U · ${vm.iptvProviderName.ifBlank { vm.iptvUrl.substringAfter("//").substringBefore("/") }}", "Wijzigen", onEdit, vm::reloadIptv)
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             verticalAlignment = Alignment.CenterVertically,

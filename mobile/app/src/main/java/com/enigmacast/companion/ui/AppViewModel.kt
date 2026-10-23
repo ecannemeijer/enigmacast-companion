@@ -741,6 +741,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         applyIptvProvider(provider)
     }
 
+    /** Reload the selected provider after a network change or an empty/failed list. */
+    fun reloadIptv() {
+        val provider = iptvProviders.firstOrNull { it.id == iptvProviderId }
+        if (provider != null) {
+            applyIptvProvider(provider)
+        } else if (iptvKind == "XTREAM" && xtreamServer.isNotBlank() && xtreamUser.isNotBlank()) {
+            loginXtream(xtreamServer, xtreamUser, xtreamPassword)
+        } else if (iptvUrl.isNotBlank()) {
+            loadIptv(iptvUrl)
+        }
+    }
+
     private fun applyIptvProvider(provider: IptvProviderPayload) {
         iptvFromTv = true
         iptvKind = provider.kind.uppercase()
