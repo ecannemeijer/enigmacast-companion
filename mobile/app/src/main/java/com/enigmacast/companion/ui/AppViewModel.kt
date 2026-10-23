@@ -55,6 +55,7 @@ import com.enigmacast.domain.xtream.XtreamSection
 import com.enigmacast.companion.protocol.FormDescriptor
 import com.enigmacast.companion.protocol.FormSubmitCommand
 import com.enigmacast.companion.protocol.HelloPayload
+import com.enigmacast.companion.protocol.IptvProviderPayload
 import com.enigmacast.companion.protocol.IptvSourcePayload
 import com.enigmacast.companion.protocol.KeyCommand
 import com.enigmacast.companion.protocol.KeyPhase
@@ -184,6 +185,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var iptvKind by mutableStateOf(store.iptvKind().orEmpty())
         private set
+    var iptvProviders by mutableStateOf<List<IptvProviderPayload>>(emptyList())
+        private set
+    var iptvProviderId by mutableStateOf<String?>(null)
+        private set
+    val iptvProviderName: String
+        get() = iptvProviders.firstOrNull { it.id == iptvProviderId }?.name.orEmpty()
     private var iptvSourceStamp = ""
     var playerQueue by mutableStateOf<List<PlayerChannel>>(emptyList())
         private set
@@ -726,6 +733,29 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // ------------------------------------------------------------ IPTV (M3U)
+
+    fun selectIptvProvider(id: String) {
+        val provider = iptvProviders.firstOrNull { it.id == id } ?: return
+        iptvProviderId = id
+        iptvSourceStamp = "${provider.id}|${provider.kind}|${provider.m3uUrl}|${provider.server}|${provider.username}|${provider.password.hashCode()}"
+        applyIptvProvider(provider)
+    }
+
+    private fun applyIptvProvider(provider: IptvProviderPayload) {
+        iptvFromTv = true
+        iptvKind = provider.kind.uppercase()
+        store.saveIptvKind(iptvKind)
+        when (iptvKind) {
+            "M3U" -> if (provider.m3uUrl.isNotBlank()) {
+                iptvUrl = provider.m3uUrl
+                store.saveIptvUrl(provider.m3uUrl)
+                loadIptv(provider.m3uUrl)
+            }
+            "XTREAM" -> if (provider.server.isNotBlank() && provider.username.isNotBlank()) {
+                loginXtream(provider.server, provider.username, provider.password)
+            }
+        }
+    }
 
     fun ensureIptvLoaded() {
         if (xtreamAccount != null) return
@@ -1593,20 +1623,34 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             MessageType.STATE_IPTV -> {
                 val source = ProtocolJson.decodePayload<IptvSourcePayload>(envelope)
                 if (source.configured) {
-                    val stamp = "${source.kind}|${source.m3uUrl}|${source.server}|${source.username}|${source.password.hashCode()}"
-                    if (stamp != iptvSourceStamp) {
-                        iptvSourceStamp = stamp
-                        iptvFromTv = true
-                        iptvKind = source.kind.uppercase()
-                        store.saveIptvKind(iptvKind)
-                        when (source.kind.uppercase()) {
-                            "M3U" -> if (source.m3uUrl.isNotBlank()) {
-                                iptvUrl = source.m3uUrl
-                                store.saveIptvUrl(source.m3uUrl)
-                                loadIptv(source.m3uUrl)
-                            }
-                            "XTREAM" -> if (source.server.isNotBlank() && source.username.isNotBlank()) {
-                                loginXtream(source.server, source.username, source.password)
+                    val providers = source.providers.sortedBy { it.sortOrder }
+                    iptvProviders = providers
+                    val chosen = providers.firstOrNull { it.id == iptvProviderId }
+                        ?: providers.firstOrNull { it.enabled }
+                        ?: providers.firstOrNull()
+                    if (chosen != null) {
+                        iptvProviderId = chosen.id
+                        val stamp = "${chosen.id}|${chosen.kind}|${chosen.m3uUrl}|${chosen.server}|${chosen.username}|${chosen.password.hashCode()}"
+                        if (stamp != iptvSourceStamp) {
+                            iptvSourceStamp = stamp
+                            applyIptvProvider(chosen)
+                        }
+                    } else {
+                        val stamp = "${source.kind}|${source.m3uUrl}|${source.server}|${source.username}|${source.password.hashCode()}"
+                        if (stamp != iptvSourceStamp) {
+                            iptvSourceStamp = stamp
+                            iptvFromTv = true
+                            iptvKind = source.kind.uppercase()
+                            store.saveIptvKind(iptvKind)
+                            when (source.kind.uppercase()) {
+                                "M3U" -> if (source.m3uUrl.isNotBlank()) {
+                                    iptvUrl = source.m3uUrl
+                                    store.saveIptvUrl(source.m3uUrl)
+                                    loadIptv(source.m3uUrl)
+                                }
+                                "XTREAM" -> if (source.server.isNotBlank() && source.username.isNotBlank()) {
+                                    loginXtream(source.server, source.username, source.password)
+                                }
                             }
                         }
                     }

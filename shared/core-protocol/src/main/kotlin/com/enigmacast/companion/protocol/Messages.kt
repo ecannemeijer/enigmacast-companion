@@ -406,6 +406,19 @@ data class RecentCommand(
 
 /** De IPTV-bron die de TV uit de sync-server heeft (of lokaal heeft opgeslagen). */
 @Serializable
+data class IptvProviderPayload(
+    val id: String = "",
+    val name: String = "",
+    val kind: String = "",
+    val m3uUrl: String = "",
+    val server: String = "",
+    val username: String = "",
+    val password: String = "",
+    val enabled: Boolean = true,
+    val sortOrder: Int = 0,
+)
+
+@Serializable
 data class IptvSourcePayload(
     val configured: Boolean = false,
     /** `M3U` of `XTREAM`. */
@@ -416,6 +429,8 @@ data class IptvSourcePayload(
     val password: String = "",
     val updatedMs: Long = 0,
     val fromSyncServer: Boolean = false,
+    /** All configured providers; the fields above mirror the selected/first one. */
+    val providers: List<IptvProviderPayload> = emptyList(),
 )
 
 @Serializable

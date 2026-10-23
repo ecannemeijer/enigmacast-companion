@@ -61,14 +61,29 @@ fun IptvScreen(vm: AppViewModel) {
         TopBar(
             "IPTV",
             when {
+                vm.iptvProviderName.isNotBlank() -> vm.iptvProviderName
                 account != null -> "Live · Films · Series"
                 hasM3u -> "Live zenders"
                 else -> "Kies je bron"
             },
         )
+        if (!setup && vm.iptvProviders.size > 1) {
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                vm.iptvProviders.forEach { provider ->
+                    FilterChip(
+                        selected = provider.id == vm.iptvProviderId,
+                        onClick = { vm.selectIptvProvider(provider.id) },
+                        label = { Text(provider.name.ifBlank { provider.kind }) },
+                    )
+                }
+            }
+        }
         when {
             account != null && !setup -> {
-                SourceBar("Xtream · ${account.name}", "Wijzigen") { setup = true }
+                SourceBar("Xtream · ${vm.iptvProviderName.ifBlank { account.name }}", "Wijzigen") { setup = true }
                 XtreamContent(vm)
             }
             hasM3u && !setup -> {
@@ -109,7 +124,7 @@ private fun M3uContent(vm: AppViewModel, onEdit: () -> Unit) {
         vm.iptvGroup == null || entry.groups.contains(vm.iptvGroup)
     }
     Column(Modifier.fillMaxSize()) {
-        SourceBar("M3U · ${vm.iptvUrl.substringAfter("//").substringBefore("/")}", "Wijzigen", onEdit)
+        SourceBar("M3U · ${vm.iptvProviderName.ifBlank { vm.iptvUrl.substringAfter("//").substringBefore("/") }}", "Wijzigen", onEdit)
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp),
             verticalAlignment = Alignment.CenterVertically,
