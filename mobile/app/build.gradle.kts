@@ -13,8 +13,8 @@ extensions.configure<com.android.build.api.dsl.ApplicationExtension> {
         applicationId = "com.enigmacast.companion"
         minSdk = 26
         targetSdk = 37
-        versionCode = 115
-        versionName = "1.0.0-beta.16"
+        versionCode = 116
+        versionName = "1.0.0-beta.17"
         buildConfigField("String", "TMDB_API_KEY", "\"${localProperty("TMDB_API_KEY")}\"")
     }
 

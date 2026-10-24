@@ -37,7 +37,14 @@ import okhttp3.WebSocketListener
  * De echte TV-verbinding: WSS met SPKI-pinning, een getekende upgrade en automatische
  * reconnect met backoff. De UI ziet dezelfde [CompanionConnection] als de mock.
  */
-class WebSocketConnection(private val identity: DeviceIdentity) : CompanionConnection {
+class WebSocketConnection(
+    private val identity: DeviceIdentity,
+    /** Finds the TV again after DHCP changed its address; null keeps retrying the old host. */
+    private val resolve: (suspend (PairedTv) -> PairedTv?)? = null,
+) : CompanionConnection {
+
+    /** Called when a reconnect discovered a new IP for the same TV. */
+    var onHostChanged: ((PairedTv) -> Unit)? = null
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -168,13 +175,24 @@ class WebSocketConnection(private val identity: DeviceIdentity) : CompanionConne
 
     private fun scheduleReconnect() {
         if (closedByUser) return
-        val current = tv ?: return
         reconnectJob?.cancel()
         val wait = Backoff.delayMs(attempt)
         attempt = (attempt + 1).coerceAtMost(8)
         reconnectJob = scope.launch {
             delay(wait)
-            if (!closedByUser) open(current)
+            if (closedByUser) return@launch
+            val old = tv ?: return@launch
+            val found = runCatching { resolve?.invoke(old) }.getOrNull()
+            val target = if (found != null && found.id == old.id) {
+                old.copy(host = found.host, port = found.port, pin = found.pin.ifBlank { old.pin })
+            } else {
+                old
+            }
+            if (target.host != old.host || target.port != old.port || target.pin != old.pin) {
+                tv = target
+                onHostChanged?.invoke(target)
+            }
+            if (!closedByUser) open(target)
         }
     }
 

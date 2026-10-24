@@ -25,8 +25,15 @@ class AppContainer(context: Context) {
     val identity: DeviceIdentity = DeviceIdentity()
     val pairing: PairingClient = PairingClient(identity)
     val photoUpload: PhotoUploadClient = PhotoUploadClient(identity)
-    val real: WebSocketConnection = WebSocketConnection(identity)
     val discovery: NsdDiscovery = NsdDiscovery(context)
+    val real: WebSocketConnection = WebSocketConnection(
+        identity,
+        resolve = { old ->
+            discovery.discover().firstOrNull { it.id == old.id }?.let { found ->
+                old.copy(host = found.host, port = found.port, pin = found.pin.ifBlank { old.pin })
+            }
+        },
+    )
     val live: EnigmaLiveClient = EnigmaLiveClient()
     val iptv: IptvClient = IptvClient()
     val xtream: XtreamClient = XtreamClient()

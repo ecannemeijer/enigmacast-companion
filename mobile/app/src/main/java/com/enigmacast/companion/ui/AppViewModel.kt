@@ -307,6 +307,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     .onFailure { android.util.Log.w("Companion", "event ${envelope.type} failed", it) }
             }
         }
+        real.onHostChanged = { changed ->
+            store.savePairedTv(changed)
+            pairedTv = changed
+        }
         pairedTv?.let { saved -> if (saved.real) useReal(saved) else useMock(saved) }
         viewModelScope.launch { refreshUpdate(auto = true) }
     }
@@ -1216,12 +1220,25 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     /** Opnieuw verbinden zonder van scherm te wisselen (instellingen, offlinebanner). */
     fun reconnect() {
         val tv = pairedTv ?: return
-        if (tv.real) {
-            active.value = real
-            real.connect(tv)
-        } else {
+        if (!tv.real) {
             active.value = mock
             mock.connect(tv)
+            return
+        }
+        viewModelScope.launch {
+            val found = runCatching { container.discovery.discover() }.getOrDefault(emptyList())
+                .firstOrNull { it.id == tv.id }
+            val target = if (found != null) {
+                tv.copy(host = found.host, port = found.port, pin = found.pin.ifBlank { tv.pin })
+            } else {
+                tv
+            }
+            if (target.host != tv.host || target.port != tv.port || target.pin != tv.pin) {
+                store.savePairedTv(target)
+                pairedTv = target
+            }
+            active.value = real
+            real.connect(target)
         }
     }
 
