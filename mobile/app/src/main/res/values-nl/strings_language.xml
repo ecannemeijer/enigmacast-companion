@@ -3,4 +3,5 @@
     <string name="language_title">Taal</string>
     <string name="language_system">Systeem</string>
     <string name="action_cancel">Annuleren</string>
+    <string name="version_prefix">Versie </string>
 </resources>

@@ -16,6 +16,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.platform.LocalContext
+import com.enigmacast.companion.R
+import java.util.Locale
 
 /**
  * Material 3 Text, with the Companion's Dutch source strings translated through resources.
@@ -41,8 +44,15 @@ fun Text(
     onTextLayout: ((TextLayoutResult) -> Unit)? = null,
     style: TextStyle = LocalTextStyle.current,
 ) {
+    val context = LocalContext.current
     val id = CompanionText.resourceId(text)
-    val shown = if (id != 0) androidx.compose.ui.res.stringResource(id) else text
+    var shown = if (id != 0) context.getString(id) else text
+    if (id != 0 && text.any { it.isLetter() } && text == text.uppercase(Locale.ROOT)) {
+        shown = shown.uppercase(Locale.ROOT)
+    }
+    if (text.startsWith("Versie ")) {
+        shown = context.getString(R.string.version_prefix) + text.removePrefix("Versie ")
+    }
     MaterialText(
         text = shown,
         modifier = modifier,

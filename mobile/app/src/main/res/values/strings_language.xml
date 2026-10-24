@@ -3,4 +3,5 @@
     <string name="language_title">Language</string>
     <string name="language_system">System</string>
     <string name="action_cancel">Cancel</string>
+    <string name="version_prefix">Version </string>
 </resources>
