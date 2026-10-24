@@ -19,6 +19,13 @@ class LocalStore(context: Context) {
         get() = prefs.getBoolean(KEY_HAPTICS, true)
         set(value) = prefs.edit().putBoolean(KEY_HAPTICS, value).apply()
 
+    fun language(): String = prefs.getString(KEY_LANGUAGE, "").orEmpty()
+
+    fun saveLanguage(tag: String) {
+        if (tag.isBlank()) prefs.edit().remove(KEY_LANGUAGE).apply()
+        else prefs.edit().putString(KEY_LANGUAGE, tag).apply()
+    }
+
     fun pairedTv(): PairedTv? {
         val id = prefs.getString(KEY_ID, null) ?: return null
         val name = prefs.getString(KEY_NAME, null) ?: return null
@@ -121,6 +128,7 @@ class LocalStore(context: Context) {
 
     private companion object {
         const val KEY_HAPTICS = "haptics"
+        const val KEY_LANGUAGE = "language"
         const val KEY_ID = "tv.id"
         const val KEY_NAME = "tv.name"
         const val KEY_HOST = "tv.host"

@@ -321,6 +321,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { refreshUpdate(auto = false) }
     }
 
+    val language: com.enigmacast.companion.data.CompanionLanguage
+        get() = com.enigmacast.companion.data.CompanionLanguage.entries
+            .firstOrNull { it.tag == store.language() }
+            ?: com.enigmacast.companion.data.CompanionLanguage.SYSTEM
+
+    fun setLanguage(language: com.enigmacast.companion.data.CompanionLanguage) {
+        store.saveLanguage(language.tag)
+    }
+
     private suspend fun refreshUpdate(auto: Boolean) {
         if (updateChecking) return
         updateChecking = true

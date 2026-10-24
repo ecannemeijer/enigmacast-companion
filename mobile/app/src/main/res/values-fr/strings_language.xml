@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="language_title">Langue</string>
+    <string name="language_system">Système</string>
+    <string name="action_cancel">Annuler</string>
+</resources>

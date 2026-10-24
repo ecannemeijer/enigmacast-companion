@@ -1,5 +1,6 @@
 package com.enigmacast.companion.ui.screens
 
+import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -35,11 +36,12 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
+import com.enigmacast.companion.ui.components.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -53,6 +55,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -60,6 +64,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.enigmacast.companion.data.ControlMode
+import com.enigmacast.companion.R
+import com.enigmacast.companion.data.CompanionLanguage
 import com.enigmacast.companion.data.LinkState
 import com.enigmacast.companion.data.LinkStatus
 import com.enigmacast.companion.protocol.ProfileInfo
@@ -80,9 +86,11 @@ import kotlinx.serialization.json.jsonPrimitive
 
 @Composable
 fun SettingsScreen(vm: AppViewModel, link: LinkStatus) {
+    val context = LocalContext.current
     val tv = vm.pairedTv
     var pending by remember { mutableStateOf<PendingSetting?>(null) }
     var pinTarget by remember { mutableStateOf<PendingSetting?>(null) }
+    var languageOpen by remember { mutableStateOf(false) }
     val settingsLocked = vm.settingsCatalog?.locked == true
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp),
@@ -202,6 +210,11 @@ fun SettingsScreen(vm: AppViewModel, link: LinkStatus) {
                 }
                 Pill(if (vm.mode == ControlMode.APP) "EnigmaCast" else "Ontvanger", color = Ink.Accent)
             }
+            Spacer(Modifier.height(10.dp))
+            SettingRow(
+                title = stringResource(R.string.language_title),
+                subtitle = if (vm.language == CompanionLanguage.SYSTEM) stringResource(R.string.language_system) else vm.language.label,
+            ) { languageOpen = true }
         }
 
         Spacer(Modifier.height(18.dp))
@@ -268,6 +281,46 @@ fun SettingsScreen(vm: AppViewModel, link: LinkStatus) {
             )
         }
         Spacer(Modifier.height(24.dp))
+    }
+
+    if (languageOpen) {
+        AlertDialog(
+            onDismissRequest = { languageOpen = false },
+            title = { Text(stringResource(R.string.language_title)) },
+            text = {
+                Column {
+                    CompanionLanguage.entries.forEach { language ->
+                        Row(
+                            Modifier.fillMaxWidth().clickable {
+                                vm.setLanguage(language)
+                                languageOpen = false
+                                (context as? Activity)?.recreate()
+                            }.padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(
+                                selected = language == vm.language,
+                                onClick = {
+                                    vm.setLanguage(language)
+                                    languageOpen = false
+                                    (context as? Activity)?.recreate()
+                                },
+                            )
+                            Text(
+                                if (language == CompanionLanguage.SYSTEM) stringResource(R.string.language_system) else language.label,
+                                color = Ink.Text,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { languageOpen = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
+        )
     }
 
     pending?.let { request ->
