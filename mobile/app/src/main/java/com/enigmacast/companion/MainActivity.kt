@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.enigmacast.companion.data.LocalStore
 import com.enigmacast.companion.ui.AppViewModel
@@ -38,5 +39,12 @@ class MainActivity : ComponentActivity() {
             val viewModel: AppViewModel = viewModel()
             CompanionApp(viewModel)
         }
+    }
+
+    private val updateModel: AppViewModel by viewModels()
+
+    override fun onResume() {
+        super.onResume()
+        updateModel.onAppResumed()
     }
 }

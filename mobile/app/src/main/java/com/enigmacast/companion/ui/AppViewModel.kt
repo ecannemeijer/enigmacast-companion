@@ -317,6 +317,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     // ------------------------------------------------------------ updates
 
+    private var lastUpdateCheckMs = 0L
+
+    /** The app came to the front: look for an update again when the last check is old. */
+    fun onAppResumed() {
+        if (updateCheckDue(lastUpdateCheckMs, System.currentTimeMillis())) {
+            viewModelScope.launch { refreshUpdate(auto = true) }
+        }
+    }
+
     fun checkForUpdates() {
         viewModelScope.launch { refreshUpdate(auto = false) }
     }
@@ -335,13 +344,17 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         updateChecking = true
         updateError = null
         if (!auto) updateStatus = "Controleren…"
+        lastUpdateCheckMs = System.currentTimeMillis()
         val release = runCatching { updates.check() }.getOrNull()
         updateChecking = false
         if (release != null && isNewerRelease(BuildConfig.VERSION_CODE, release)) {
+            if (updateAvailable?.versionCode == release.versionCode && (updateDownloading || updateReady != null)) return
             updateAvailable = release
             updateReady = null
             updateProgress = 0
             updateStatus = "Versie ${release.versionName} is beschikbaar"
+            // A new release downloads by itself and then opens the install step.
+            downloadUpdate(install = true)
         } else if (!auto) {
             updateStatus = if (release == null) {
                 "Kon de update-server niet bereiken"
@@ -352,7 +365,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun downloadUpdate() {
+    fun downloadUpdate() = downloadUpdate(install = false)
+
+    private fun downloadUpdate(install: Boolean) {
         val release = updateAvailable ?: return
         if (updateDownloading) return
         updateDownloading = true
@@ -364,6 +379,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 updates.download(release) { progress -> updateProgress = progress }
             }.onSuccess { file ->
                 updateReady = file
+                if (install && updates.canInstall()) installUpdate()
             }.onFailure { failure ->
                 updateError = failure.message ?: "Download mislukt"
                 showToast(updateError ?: "Download mislukt", "error")

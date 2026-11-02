@@ -1,7 +1,10 @@
 package com.enigmacast.companion.data.update
 
 import android.content.Context
+import android.app.PendingIntent
 import android.content.Intent
+import android.content.pm.PackageInstaller
+import android.os.Build
 import android.net.Uri
 import android.provider.Settings
 import androidx.core.content.FileProvider
@@ -24,13 +27,13 @@ class AppUpdateClient(private val context: Context) {
         .build()
 
     suspend fun check(): RemoteRelease? = withContext(Dispatchers.IO) {
-        val combined = fetch(UPDATE_MANIFEST_URL)?.let { text ->
-            runCatching { json.decodeFromString<UpdateManifest>(text) }.getOrNull()
+        val own = fetch(UPDATE_MANIFEST_URL)?.let { text ->
+            runCatching { json.decodeFromString<RemoteRelease>(text) }.getOrNull()
         }
-        combined?.companion?.let { return@withContext it }
-
-        val fallback = fetch(UPDATE_FALLBACK_MANIFEST_URL) ?: return@withContext null
-        runCatching { json.decodeFromString<RemoteRelease>(fallback) }.getOrNull()
+        val fromTv = fetch(UPDATE_FALLBACK_MANIFEST_URL)?.let { text ->
+            runCatching { json.decodeFromString<UpdateManifest>(text) }.getOrNull()?.companion
+        }
+        newestRelease(own, fromTv)
     }
 
     suspend fun download(release: RemoteRelease, onProgress: suspend (Int) -> Unit): File =
@@ -83,7 +86,38 @@ class AppUpdateClient(private val context: Context) {
         context.startActivity(intent)
     }
 
+    /**
+     * Installs through PackageInstaller: Android asks the user to confirm (the first time, or
+     * always when another app installed the Companion); later updates of itself may go through
+     * without a question on Android 12+. Falls back to the classic install screen.
+     */
     fun install(apk: File) {
+        runCatching { installWithSession(apk) }.onFailure { installWithIntent(apk) }
+    }
+
+    private fun installWithSession(apk: File) {
+        val installer = context.packageManager.packageInstaller
+        val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL).apply {
+            setAppPackageName(context.packageName)
+            setSize(apk.length())
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
+            }
+        }
+        val id = installer.createSession(params)
+        installer.openSession(id).use { session ->
+            session.openWrite("enigmacast-companion.apk", 0, apk.length()).use { out ->
+                apk.inputStream().use { it.copyTo(out) }
+                session.fsync(out)
+            }
+            val callback = Intent(context, UpdateInstallReceiver::class.java).setPackage(context.packageName)
+            val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0)
+            session.commit(PendingIntent.getBroadcast(context, id, callback, flags).intentSender)
+        }
+    }
+
+    private fun installWithIntent(apk: File) {
         val uri = FileProvider.getUriForFile(
             context,
             "${BuildConfig.APPLICATION_ID}.fileprovider",

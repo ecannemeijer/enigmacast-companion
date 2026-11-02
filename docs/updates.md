@@ -16,6 +16,16 @@ TV-release gebruikt). Daardoor kun je hem over een eerdere debug-installatie hee
 installeren. Voor een Play Store-release is een eigen upload-key nodig; wie daarna
 overstapt, moet de app eenmalig verwijderen.
 
+## Updates via GitHub Releases (vanaf 1.0.0-beta.20)
+
+De Companion leest `https://github.com/ecannemeijer/enigmacast-companion/releases/latest/download/enigmacast-companion.json`
+en, als tweede bron, het `companion`-object in de `enigmacast-v2.json` van de TV-release. De hoogste
+`versionCode` wint. Controle bij elke start en daarna elke 6 uur zodra de app weer voorgrond krijgt.
+Een nieuwere versie wordt automatisch gedownload en via PackageInstaller geinstalleerd (Android vraagt
+om bevestiging waar nodig). Een release op GitHub heeft twee assets: `enigmacast-companion.apk` en
+`enigmacast-companion.json` (met `apkUrl` naar `.../releases/latest/download/enigmacast-companion.apk`).
+De TV-app toont onder Instellingen > Telefoon een QR-code naar die APK-link.
+
 ## Update-JSON
 
 Er zijn twee bestanden:
