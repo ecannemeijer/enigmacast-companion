@@ -30,6 +30,7 @@ import com.enigmacast.companion.data.net.PairingResult
 import com.enigmacast.companion.data.tmdb.TmdbInfo
 import com.enigmacast.companion.data.update.RemoteRelease
 import com.enigmacast.companion.data.update.isNewerRelease
+import com.enigmacast.companion.data.update.updateCheckDue
 import com.enigmacast.companion.protocol.Envelope
 import com.enigmacast.companion.protocol.LibraryAction
 import com.enigmacast.companion.protocol.LibraryCommand
