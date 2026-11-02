@@ -230,6 +230,9 @@ private fun LiveContent(vm: AppViewModel, link: LinkStatus, onEdit: () -> Unit) 
             Column(Modifier.weight(1f)) {
                 Text(config.name.ifBlank { config.host }, color = Ink.Text, style = MaterialTheme.typography.titleLarge)
                 Text("${config.host}:${config.httpPort} · stream ${config.streamingPort}", color = Ink.Subtle, style = MaterialTheme.typography.bodySmall)
+                if (vm.liveReceiverFromTv) {
+                    Text("Deze bron kwam automatisch van de TV.", color = Ink.Accent, style = MaterialTheme.typography.bodySmall)
+                }
             }
             GhostButton("Wijzigen", onClick = onEdit, modifier = Modifier.width(120.dp))
         }

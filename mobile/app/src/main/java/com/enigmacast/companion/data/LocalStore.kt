@@ -86,6 +86,20 @@ class LocalStore(context: Context) {
         secure.put(KEY_LIVE_PASSWORD, config.password)
     }
 
+    /** True when the Live receiver came from the paired TV (not typed in by hand). */
+    fun liveReceiverFromTv(): Boolean = prefs.getBoolean(KEY_LIVE_FROM_TV, false)
+
+    fun saveLiveReceiverFromTv(fromTv: Boolean) {
+        prefs.edit().putBoolean(KEY_LIVE_FROM_TV, fromTv).apply()
+    }
+
+    /** Last receiver the TV sent; a manual choice stays until the TV's receiver changes. */
+    fun liveReceiverTvStamp(): String = prefs.getString(KEY_LIVE_TV_STAMP, "").orEmpty()
+
+    fun saveLiveReceiverTvStamp(stamp: String) {
+        prefs.edit().putString(KEY_LIVE_TV_STAMP, stamp).apply()
+    }
+
     fun clearLiveReceiver() {
         prefs.edit().remove(KEY_LIVE_RECEIVER).apply()
         secure.remove(KEY_LIVE_PASSWORD)
@@ -138,6 +152,8 @@ class LocalStore(context: Context) {
         const val KEY_REAL = "tv.real"
         const val KEY_TOKEN = "tv.token"
         const val KEY_LIVE_RECEIVER = "live.receiver"
+        const val KEY_LIVE_FROM_TV = "live.receiver.fromTv"
+        const val KEY_LIVE_TV_STAMP = "live.receiver.tvStamp"
         const val KEY_LIVE_PASSWORD = "live.password"
         const val KEY_IPTV_URL = "iptv.url"
         const val KEY_IPTV_KIND = "iptv.kind"

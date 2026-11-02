@@ -492,3 +492,29 @@ object ErrorCode {
     const val NOT_FOUND = "NOT_FOUND"
     const val INTERNAL = "INTERNAL"
 }
+
+/** One Enigma2 receiver as the TV has it configured (OpenWebif login included). */
+@Serializable
+data class SharedReceiver(
+    val id: String = "",
+    val name: String = "",
+    val host: String = "",
+    val httpPort: Int = 80,
+    val useHttps: Boolean = false,
+    val username: String = "",
+    val password: String = "",
+    val streamingPort: Int = 8001,
+    val allowInsecureCertificates: Boolean = false,
+    val timeoutSeconds: Int = 8,
+)
+
+/** [MessageType.STATE_RECEIVER]: the TV's receivers and which one is active. */
+@Serializable
+data class ReceiverStatePayload(
+    val activeId: String = "",
+    val receivers: List<SharedReceiver> = emptyList(),
+)
+
+/** [MessageType.CMD_RECEIVER] has no fields. */
+@Serializable
+class ReceiverRequest

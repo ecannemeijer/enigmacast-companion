@@ -28,6 +28,11 @@ import com.enigmacast.companion.data.live.PlayerChannel
 import com.enigmacast.companion.data.library.LibraryItem
 import com.enigmacast.companion.data.net.PairingResult
 import com.enigmacast.companion.data.tmdb.TmdbInfo
+import com.enigmacast.companion.data.live.tvReceiverConfig
+import com.enigmacast.companion.data.live.tvReceiverStamp
+import com.enigmacast.companion.protocol.Capability
+import com.enigmacast.companion.protocol.ReceiverRequest
+import com.enigmacast.companion.protocol.ReceiverStatePayload
 import com.enigmacast.companion.data.update.RemoteRelease
 import com.enigmacast.companion.data.update.isNewerRelease
 import com.enigmacast.companion.data.update.updateCheckDue
@@ -145,6 +150,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var photoPreviewError by mutableStateOf<String?>(null)
         private set
     var liveReceiver by mutableStateOf(store.liveReceiver())
+        private set
+    var liveReceiverFromTv by mutableStateOf(store.liveReceiverFromTv())
         private set
     var liveBouquets by mutableStateOf<List<BouquetEntry>>(emptyList())
         private set
@@ -415,6 +422,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun open(target: AppScreen) {
         screen = target
         if (target != AppScreen.REMOTE) showNumbers = false
+        if (target == AppScreen.LIVE && Capability.RECEIVER in snapshot.capabilities) {
+            send(ProtocolJson.envelope(MessageType.CMD_RECEIVER, ReceiverRequest(), id = nextId()))
+        }
         if (target == AppScreen.LIVE && liveReceiver != null && liveBouquets.isEmpty() && !liveLoading) {
             loadLiveBouquets()
         }
@@ -449,8 +459,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     // ------------------------------------------------------------ live (Enigma2)
 
-    fun saveLiveReceiver(config: ReceiverConfig) {
+    fun saveLiveReceiver(config: ReceiverConfig) = applyLiveReceiver(config, fromTv = false)
+
+    private fun applyLiveReceiver(config: ReceiverConfig, fromTv: Boolean) {
         store.saveLiveReceiver(config)
+        store.saveLiveReceiverFromTv(fromTv)
+        liveReceiverFromTv = fromTv
         liveReceiver = config
         liveBouquets = emptyList()
         liveBouquet = null
@@ -1669,6 +1683,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 val payload = ProtocolJson.decodePayload<LibraryStatePayload>(envelope)
                 library = container.library.syncFromTv(payload.favorites + payload.resume)
                 recordings = payload.recordings
+            }
+            MessageType.STATE_RECEIVER -> {
+                val config = tvReceiverConfig(ProtocolJson.decodePayload<ReceiverStatePayload>(envelope))
+                if (config != null) {
+                    val stamp = tvReceiverStamp(config)
+                    if (liveReceiver == null || stamp != store.liveReceiverTvStamp()) {
+                        store.saveLiveReceiverTvStamp(stamp)
+                        applyLiveReceiver(config, fromTv = true)
+                    }
+                }
             }
             MessageType.STATE_RECENT -> {
                 val payload = ProtocolJson.decodePayload<RecentStatePayload>(envelope)
