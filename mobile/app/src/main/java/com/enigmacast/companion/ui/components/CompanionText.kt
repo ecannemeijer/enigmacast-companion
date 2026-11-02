@@ -370,6 +370,22 @@ object CompanionText {
         "woonkamer" to R.string.ui_0342,
         "zender" to R.string.ui_0343,
         "zenderlijst" to R.string.ui_0344,
+        "zoeken" to R.string.ui_0345,
+        "torrents" to R.string.ui_0346,
+        "zoek films en series" to R.string.ui_0347,
+        "zoek films, series, personen of zenders" to R.string.ui_0348,
+        "verbind eerst met de tv om te zoeken." to R.string.ui_0349,
+        "zoeken…" to R.string.ui_0350,
+        "kies een resultaat om het op de tv te openen." to R.string.ui_0351,
+        "geen resultaten" to R.string.ui_0352,
+        "nu op tv" to R.string.ui_0353,
+        "zenders" to R.string.ui_0354,
+        "straks" to R.string.ui_0355,
+        "opnames" to R.string.ui_0356,
+        "iptv-zenders" to R.string.ui_0357,
+        "personen" to R.string.ui_0358,
+        "regisseur" to R.string.ui_0359,
+        "geopend op de tv" to R.string.ui_0360,
     )
     fun resourceId(text: String): Int = ids[text.lowercase(Locale.ROOT)] ?: 0
 }

@@ -65,6 +65,8 @@ object MessageType {
     const val CMD_SYNC = "cmd.sync"
     /** Ask the TV to send [STATE_RECEIVER] again (e.g. when Live opens). */
     const val CMD_RECEIVER = "cmd.receiver"
+    const val CMD_SEARCH = "cmd.search"
+    const val CMD_SEARCH_OPEN = "cmd.search.open"
     const val PING = "ping"
 
     // server → client
@@ -80,6 +82,9 @@ object MessageType {
     const val STATE_IPTV = "state.iptv"
     /** The TV's Enigma2 receivers (only to paired phones, over the TLS channel). */
     const val STATE_RECEIVER = "state.receiver"
+    /** Optional TV features ({"torrents": bool}); the Torrents tab follows it. */
+    const val STATE_FEATURES = "state.features"
+    const val STATE_SEARCH = "state.search"
     const val STATE_TUNER = "state.tuner"
     const val FORM = "form"
     const val TOAST = "toast"
@@ -101,4 +106,5 @@ object Capability {
     const val STATE = "state"
     const val POWER = "power"
     const val RECEIVER = "receiver"
+    const val SEARCH = "search"
 }

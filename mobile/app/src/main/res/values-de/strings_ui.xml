@@ -345,4 +345,20 @@
     <string name="ui_0342">Wohnzimmer</string>
     <string name="ui_0343">Sender</string>
     <string name="ui_0344">Senderliste</string>
+    <string name="ui_0345">Suchen</string>
+    <string name="ui_0346">Torrents</string>
+    <string name="ui_0347">Filme und Serien suchen</string>
+    <string name="ui_0348">Filme, Serien, Personen oder Sender suchen</string>
+    <string name="ui_0349">Verbinde dich zuerst mit dem TV, um zu suchen.</string>
+    <string name="ui_0350">Suche läuft…</string>
+    <string name="ui_0351">Wähle ein Ergebnis, um es auf dem TV zu öffnen.</string>
+    <string name="ui_0352">Keine Ergebnisse</string>
+    <string name="ui_0353">Jetzt im TV</string>
+    <string name="ui_0354">Sender</string>
+    <string name="ui_0355">Später</string>
+    <string name="ui_0356">Aufnahmen</string>
+    <string name="ui_0357">IPTV-Sender</string>
+    <string name="ui_0358">Personen</string>
+    <string name="ui_0359">Regisseur</string>
+    <string name="ui_0360">Auf dem TV geöffnet</string>
 </resources>

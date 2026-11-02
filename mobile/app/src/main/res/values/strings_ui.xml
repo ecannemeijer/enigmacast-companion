@@ -345,4 +345,20 @@
     <string name="ui_0342">Living room</string>
     <string name="ui_0343">Channel</string>
     <string name="ui_0344">Channel list</string>
+    <string name="ui_0345">Search</string>
+    <string name="ui_0346">Torrents</string>
+    <string name="ui_0347">Search films and series</string>
+    <string name="ui_0348">Search films, series, people or channels</string>
+    <string name="ui_0349">Connect to the TV first to search.</string>
+    <string name="ui_0350">Searching…</string>
+    <string name="ui_0351">Pick a result to open it on the TV.</string>
+    <string name="ui_0352">No results</string>
+    <string name="ui_0353">On TV now</string>
+    <string name="ui_0354">Channels</string>
+    <string name="ui_0355">Later</string>
+    <string name="ui_0356">Recordings</string>
+    <string name="ui_0357">IPTV channels</string>
+    <string name="ui_0358">People</string>
+    <string name="ui_0359">Director</string>
+    <string name="ui_0360">Opened on the TV</string>
 </resources>

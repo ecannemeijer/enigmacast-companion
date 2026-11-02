@@ -14,9 +14,12 @@ enum class AppScreen {
     SETTINGS,
     PROFILES,
     PLAYER,
+    SEARCH,
+    TORRENTS,
     ;
 
     /** Schermen met een tab in de onderbalk. */
     val isTab: Boolean
-        get() = this == REMOTE || this == LIVE || this == IPTV || this == LIBRARY || this == SETTINGS
+        get() = this == REMOTE || this == LIVE || this == IPTV || this == LIBRARY || this == SETTINGS ||
+            this == SEARCH || this == TORRENTS
 }

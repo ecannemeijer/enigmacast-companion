@@ -345,4 +345,20 @@
     <string name="ui_0342">Salon</string>
     <string name="ui_0343">Chaîne</string>
     <string name="ui_0344">Liste des chaînes</string>
+    <string name="ui_0345">Rechercher</string>
+    <string name="ui_0346">Torrents</string>
+    <string name="ui_0347">Rechercher des films et séries</string>
+    <string name="ui_0348">Rechercher des films, séries, personnes ou chaînes</string>
+    <string name="ui_0349">Connectez-vous d\'abord au téléviseur pour rechercher.</string>
+    <string name="ui_0350">Recherche…</string>
+    <string name="ui_0351">Choisissez un résultat pour l\'ouvrir sur le téléviseur.</string>
+    <string name="ui_0352">Aucun résultat</string>
+    <string name="ui_0353">En ce moment à la télé</string>
+    <string name="ui_0354">Chaînes</string>
+    <string name="ui_0355">Plus tard</string>
+    <string name="ui_0356">Enregistrements</string>
+    <string name="ui_0357">Chaînes IPTV</string>
+    <string name="ui_0358">Personnes</string>
+    <string name="ui_0359">Réalisateur</string>
+    <string name="ui_0360">Ouvert sur le téléviseur</string>
 </resources>

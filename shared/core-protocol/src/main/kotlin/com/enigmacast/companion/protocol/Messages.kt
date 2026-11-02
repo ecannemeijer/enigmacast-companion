@@ -518,3 +518,36 @@ data class ReceiverStatePayload(
 /** [MessageType.CMD_RECEIVER] has no fields. */
 @Serializable
 class ReceiverRequest
+
+/** [MessageType.STATE_FEATURES]. */
+@Serializable
+data class FeaturesPayload(val torrents: Boolean = false)
+
+/** [MessageType.CMD_SEARCH]: [scope] "all" or "torrents". */
+@Serializable
+data class SearchCommand(val query: String, val scope: String = "all")
+
+/** [MessageType.CMD_SEARCH_OPEN]: opens a result on the TV. */
+@Serializable
+data class SearchOpenCommand(val key: String)
+
+@Serializable
+data class SearchItem(
+    val key: String = "",
+    val title: String = "",
+    val subtitle: String = "",
+    val image: String = "",
+)
+
+/** Section ids: now, channels, later, recordings, films, series, iptv, people, torrents. */
+@Serializable
+data class SearchSection(val id: String = "", val items: List<SearchItem> = emptyList())
+
+/** [MessageType.STATE_SEARCH]. */
+@Serializable
+data class SearchStatePayload(
+    val query: String = "",
+    val scope: String = "all",
+    val torrents: Boolean = false,
+    val sections: List<SearchSection> = emptyList(),
+)

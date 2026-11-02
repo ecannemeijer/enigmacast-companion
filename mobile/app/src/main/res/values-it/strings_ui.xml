@@ -345,4 +345,20 @@
     <string name="ui_0342">Soggiorno</string>
     <string name="ui_0343">Canale</string>
     <string name="ui_0344">Lista canali</string>
+    <string name="ui_0345">Cerca</string>
+    <string name="ui_0346">Torrent</string>
+    <string name="ui_0347">Cerca film e serie</string>
+    <string name="ui_0348">Cerca film, serie, persone o canali</string>
+    <string name="ui_0349">Connettiti prima al TV per cercare.</string>
+    <string name="ui_0350">Ricerca in corso…</string>
+    <string name="ui_0351">Scegli un risultato per aprirlo sul TV.</string>
+    <string name="ui_0352">Nessun risultato</string>
+    <string name="ui_0353">Ora in TV</string>
+    <string name="ui_0354">Canali</string>
+    <string name="ui_0355">Più tardi</string>
+    <string name="ui_0356">Registrazioni</string>
+    <string name="ui_0357">Canali IPTV</string>
+    <string name="ui_0358">Persone</string>
+    <string name="ui_0359">Regista</string>
+    <string name="ui_0360">Aperto sul TV</string>
 </resources>

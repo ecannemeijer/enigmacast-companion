@@ -32,6 +32,10 @@ import com.enigmacast.companion.data.live.tvReceiverConfig
 import com.enigmacast.companion.data.live.tvReceiverStamp
 import com.enigmacast.companion.protocol.Capability
 import com.enigmacast.companion.protocol.ReceiverRequest
+import com.enigmacast.companion.protocol.FeaturesPayload
+import com.enigmacast.companion.protocol.SearchCommand
+import com.enigmacast.companion.protocol.SearchOpenCommand
+import com.enigmacast.companion.protocol.SearchStatePayload
 import com.enigmacast.companion.protocol.ReceiverStatePayload
 import com.enigmacast.companion.data.update.RemoteRelease
 import com.enigmacast.companion.data.update.isNewerRelease
@@ -153,6 +157,41 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var liveReceiverFromTv by mutableStateOf(store.liveReceiverFromTv())
         private set
+
+    /** The paired TV has torrents enabled (state.features); shows the Torrents tab. */
+    var torrentsEnabled by mutableStateOf(false)
+        private set
+
+    /** Search results per scope ("all" for Search, "torrents" for the Torrents tab). */
+    var searchResults by mutableStateOf<Map<String, SearchStatePayload>>(emptyMap())
+        private set
+    var searchQueries by mutableStateOf<Map<String, String>>(emptyMap())
+        private set
+    var searchingScope by mutableStateOf<String?>(null)
+        private set
+    private var searchJob: kotlinx.coroutines.Job? = null
+
+    val canSearch: Boolean get() = Capability.SEARCH in snapshot.capabilities
+
+    fun search(query: String, scope: String) {
+        searchQueries = searchQueries + (scope to query)
+        searchJob?.cancel()
+        if (query.trim().length < 2) {
+            searchResults = searchResults - scope
+            searchingScope = null
+            return
+        }
+        searchJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(400)
+            searchingScope = scope
+            send(ProtocolJson.envelope(MessageType.CMD_SEARCH, SearchCommand(query.trim(), scope), id = nextId()))
+        }
+    }
+
+    fun openSearchResult(key: String) {
+        send(ProtocolJson.envelope(MessageType.CMD_SEARCH_OPEN, SearchOpenCommand(key), id = nextId()))
+        showToast("Geopend op de tv")
+    }
     var liveBouquets by mutableStateOf<List<BouquetEntry>>(emptyList())
         private set
     var liveBouquet by mutableStateOf<BouquetEntry?>(null)
@@ -1640,6 +1679,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private suspend fun handleEvent(envelope: Envelope) {
         when (envelope.type) {
             MessageType.HELLO -> {
+                torrentsEnabled = false
                 val hello = ProtocolJson.decodePayload<HelloPayload>(envelope)
                 pendingProgress?.let { command ->
                     send(ProtocolJson.envelope(MessageType.CMD_LIBRARY, command, id = nextId()))
@@ -1683,6 +1723,17 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 val payload = ProtocolJson.decodePayload<LibraryStatePayload>(envelope)
                 library = container.library.syncFromTv(payload.favorites + payload.resume)
                 recordings = payload.recordings
+            }
+            MessageType.STATE_FEATURES -> {
+                torrentsEnabled = ProtocolJson.decodePayload<FeaturesPayload>(envelope).torrents
+                if (!torrentsEnabled && screen == AppScreen.TORRENTS) open(AppScreen.REMOTE)
+            }
+            MessageType.STATE_SEARCH -> {
+                val payload = ProtocolJson.decodePayload<SearchStatePayload>(envelope)
+                if (payload.query == searchQueries[payload.scope]?.trim()) {
+                    searchResults = searchResults + (payload.scope to payload)
+                    if (searchingScope == payload.scope) searchingScope = null
+                }
             }
             MessageType.STATE_RECEIVER -> {
                 val config = tvReceiverConfig(ProtocolJson.decodePayload<ReceiverStatePayload>(envelope))

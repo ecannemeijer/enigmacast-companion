@@ -345,4 +345,20 @@
     <string name="ui_0342">Woonkamer</string>
     <string name="ui_0343">Zender</string>
     <string name="ui_0344">Zenderlijst</string>
+    <string name="ui_0345">Zoeken</string>
+    <string name="ui_0346">Torrents</string>
+    <string name="ui_0347">Zoek films en series</string>
+    <string name="ui_0348">Zoek films, series, personen of zenders</string>
+    <string name="ui_0349">Verbind eerst met de tv om te zoeken.</string>
+    <string name="ui_0350">Zoeken…</string>
+    <string name="ui_0351">Kies een resultaat om het op de tv te openen.</string>
+    <string name="ui_0352">Geen resultaten</string>
+    <string name="ui_0353">Nu op tv</string>
+    <string name="ui_0354">Zenders</string>
+    <string name="ui_0355">Straks</string>
+    <string name="ui_0356">Opnames</string>
+    <string name="ui_0357">IPTV-zenders</string>
+    <string name="ui_0358">Personen</string>
+    <string name="ui_0359">Regisseur</string>
+    <string name="ui_0360">Geopend op de tv</string>
 </resources>

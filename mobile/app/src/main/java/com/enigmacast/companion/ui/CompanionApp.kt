@@ -93,10 +93,12 @@ fun CompanionApp(vm: AppViewModel) {
                         AppScreen.IPTV -> IptvScreen(vm)
                         AppScreen.XTREAM -> XtreamScreen(vm)
                         AppScreen.LIBRARY -> LibraryScreen(vm)
+                        AppScreen.SEARCH -> com.enigmacast.companion.ui.screens.SearchScreen(vm, com.enigmacast.companion.ui.screens.SCOPE_ALL)
+                        AppScreen.TORRENTS -> com.enigmacast.companion.ui.screens.SearchScreen(vm, com.enigmacast.companion.ui.screens.SCOPE_TORRENTS)
                     }
                 }
                 if (vm.screen.isTab) {
-                    BottomBar(current = vm.screen, onSelect = vm::open)
+                    BottomBar(current = vm.screen, torrents = vm.torrentsEnabled, onSelect = vm::open)
                 }
             }
             ToastHost(
@@ -143,12 +145,14 @@ private val TABS = listOf(
     Tab(AppScreen.REMOTE, "◉", "Remote"),
     Tab(AppScreen.LIVE, "▷", "Live"),
     Tab(AppScreen.IPTV, "☰", "IPTV"),
+    Tab(AppScreen.SEARCH, "⌕", "Zoeken"),
+    Tab(AppScreen.TORRENTS, "⇣", "Torrents"),
     Tab(AppScreen.LIBRARY, "★", "Mijn"),
     Tab(AppScreen.SETTINGS, "⋯", "Meer"),
 )
 
 @Composable
-private fun BottomBar(current: AppScreen, onSelect: (AppScreen) -> Unit) {
+private fun BottomBar(current: AppScreen, torrents: Boolean, onSelect: (AppScreen) -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -157,7 +161,8 @@ private fun BottomBar(current: AppScreen, onSelect: (AppScreen) -> Unit) {
             .padding(horizontal = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TABS.forEach { tab ->
+        // Torrents only while the paired TV has them enabled (state.features).
+        TABS.filter { torrents || it.screen != AppScreen.TORRENTS }.forEach { tab ->
             val selected = current == tab.screen
             Column(
                 Modifier
