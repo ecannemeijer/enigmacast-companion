@@ -550,7 +550,7 @@ private fun StreamPlayer(vm: AppViewModel) {
                     }) {
                         Text(if (playing) "❚❚" else "▶", color = Color.White, fontSize = 20.sp)
                     }
-                    val favorite = vm.isFavorite(vm.playbackUrl)
+                    val favorite = vm.isFavorite(vm.playbackLibraryUrl)
                     TextButton(onClick = { vm.toggleFavorite(); revealOsd() }) {
                         Text(
                             if (favorite) "★" else "☆",

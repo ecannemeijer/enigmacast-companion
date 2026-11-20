@@ -26,6 +26,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import com.enigmacast.companion.ui.components.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.stringResource
+import com.enigmacast.companion.R
+import com.enigmacast.companion.ui.components.rememberNotificationThen
+import com.enigmacast.domain.download.VodDownloadState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -252,25 +256,61 @@ private fun XtreamSeriesContent(vm: AppViewModel) {
         if (error != null) {
             Text(error, color = Ink.Danger, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 20.dp))
         }
+        val seasons = vm.xtreamEpisodes.map { it.season }.distinct().sorted()
         LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp, vertical = 8.dp),
         ) {
-            items(vm.xtreamEpisodes, key = { it.id }) { episode ->
-                GlassCard(
-                    Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { vm.watchXtreamEpisode(episode) },
-                    padding = 12.dp,
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        ChannelLogo(episode.cover, episode.title, size = 46.dp, round = false)
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                "S${episode.season} · E${episode.episode} · ${episode.title}",
-                                color = Ink.Text,
-                                style = MaterialTheme.typography.titleSmall,
-                            )
-                            Text("▶  Bekijk", color = Ink.Accent, fontSize = 11.sp)
+            seasons.forEach { season ->
+                item(key = "season-$season") {
+                    val downloadSeason = rememberNotificationThen { vm.enqueueSeasonDownload(season) }
+                    Row(
+                        Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            stringResource(R.string.iptv_season, season),
+                            color = Ink.Subtle,
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(onClick = downloadSeason) {
+                            Text(stringResource(R.string.iptv_download_season), color = Ink.Accent, fontSize = 12.sp)
+                        }
+                    }
+                }
+                val episodes = vm.xtreamEpisodes.filter { it.season == season }
+                items(episodes, key = { it.id }) { episode ->
+                    val download = vm.downloadForEpisode(episode)
+                    val requestDownload = rememberNotificationThen { vm.enqueueEpisodeDownload(episode) }
+                    GlassCard(
+                        Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { vm.watchXtreamEpisode(episode) },
+                        padding = 12.dp,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            ChannelLogo(episode.cover, episode.title, size = 46.dp, round = false)
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    "S${episode.season} · E${episode.episode} · ${episode.title}",
+                                    color = Ink.Text,
+                                    style = MaterialTheme.typography.titleSmall,
+                                )
+                                Text("▶  Bekijk", color = Ink.Accent, fontSize = 11.sp)
+                            }
+                            TextButton(onClick = requestDownload) {
+                                Text(
+                                    when (download?.state) {
+                                        VodDownloadState.DONE -> stringResource(R.string.iptv_download_already)
+                                        VodDownloadState.RUNNING, VodDownloadState.QUEUED -> stringResource(R.string.iptv_download_running)
+                                        VodDownloadState.PAUSED -> stringResource(R.string.iptv_download_paused)
+                                        VodDownloadState.FAILED -> stringResource(R.string.iptv_download_failed)
+                                        else -> stringResource(R.string.iptv_download)
+                                    },
+                                    color = Ink.Accent,
+                                    fontSize = 11.sp,
+                                )
+                            }
                         }
                     }
                 }

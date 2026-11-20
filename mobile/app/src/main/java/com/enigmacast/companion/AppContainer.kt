@@ -38,6 +38,10 @@ class AppContainer(context: Context) {
     val iptv: IptvClient = IptvClient()
     val xtream: XtreamClient = XtreamClient()
     val library: LibraryStore = LibraryStore(context)
+    val downloads: com.enigmacast.companion.data.download.VodDownloadManager =
+        com.enigmacast.companion.data.download.VodDownloadManager(context)
+    val libraryOutbox: com.enigmacast.companion.data.library.LibraryOutbox =
+        com.enigmacast.companion.data.library.LibraryOutbox(context)
     val updates: AppUpdateClient = AppUpdateClient(context)
     val tmdb: TmdbClient = TmdbClient()
 }

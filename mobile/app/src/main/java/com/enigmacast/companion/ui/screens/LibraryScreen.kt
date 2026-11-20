@@ -15,7 +15,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import com.enigmacast.companion.ui.components.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -24,7 +31,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.enigmacast.companion.R
 import com.enigmacast.companion.data.library.LibraryItem
+import com.enigmacast.domain.download.VodDownload
+import com.enigmacast.domain.download.VodDownloadState
 import com.enigmacast.companion.ui.AppViewModel
 import com.enigmacast.companion.ui.components.GlassCard
 import com.enigmacast.companion.ui.components.SectionLabel
@@ -85,6 +95,17 @@ fun LibraryScreen(vm: AppViewModel) {
                 )
             } else {
                 favorites.forEach { item -> LibraryRow(item, vm, showProgress = item.durationMs > 0) }
+            }
+
+            SectionLabel(stringResource(R.string.iptv_downloads))
+            if (vm.downloads.isEmpty()) {
+                Text(
+                    stringResource(R.string.iptv_downloads_empty),
+                    color = Ink.Muted,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            } else {
+                vm.downloads.forEach { item -> DownloadRow(item, vm) }
             }
 
             SectionLabel("Opnames op de ontvanger")
@@ -214,4 +235,93 @@ private fun time(ms: Long): String {
     } else {
         "%d:%02d".format(minutes, seconds)
     }
+}
+
+
+@Composable
+private fun DownloadRow(item: VodDownload, vm: AppViewModel) {
+    var confirmDelete by remember { mutableStateOf(false) }
+    val progress = if (item.totalBytes > 0L) {
+        (item.downloadedBytes.toFloat() / item.totalBytes.toFloat()).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+    GlassCard(Modifier.fillMaxWidth(), padding = 12.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(
+                Modifier
+                    .weight(1f)
+                    .clickable {
+                        if (item.state == VodDownloadState.DONE) vm.playDownload(item)
+                    },
+            ) {
+                Text(item.title, color = Ink.Text, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Text(
+                    downloadStatus(item),
+                    color = Ink.Subtle,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                if (item.state == VodDownloadState.RUNNING || item.state == VodDownloadState.QUEUED || item.state == VodDownloadState.PAUSED) {
+                    LinearProgressIndicator(
+                        progress = { if (item.totalBytes > 0L) progress else 0f },
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                        color = Ink.Accent,
+                    )
+                }
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            when (item.state) {
+                VodDownloadState.DONE -> TextButton(onClick = { vm.playDownload(item) }) {
+                    Text(stringResource(R.string.iptv_download_done), color = Ink.Accent, fontSize = 12.sp)
+                }
+                VodDownloadState.RUNNING, VodDownloadState.QUEUED -> TextButton(onClick = { vm.pauseDownload(item.id) }) {
+                    Text(stringResource(R.string.iptv_download_pause), color = Ink.Accent, fontSize = 12.sp)
+                }
+                VodDownloadState.PAUSED, VodDownloadState.FAILED -> TextButton(onClick = { vm.resumeDownload(item.id) }) {
+                    Text(stringResource(R.string.iptv_download_resume), color = Ink.Accent, fontSize = 12.sp)
+                }
+                VodDownloadState.CANCELED -> Unit
+            }
+            if (item.state != VodDownloadState.DONE && item.state != VodDownloadState.CANCELED) {
+                TextButton(onClick = { vm.cancelDownload(item.id) }) {
+                    Text(stringResource(R.string.iptv_download_cancel), color = Ink.Muted, fontSize = 12.sp)
+                }
+            }
+            TextButton(onClick = { confirmDelete = true }) {
+                Text(stringResource(R.string.iptv_download_delete), color = Ink.Danger, fontSize = 12.sp)
+            }
+        }
+    }
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text(stringResource(R.string.iptv_download_delete_title)) },
+            text = { Text(stringResource(R.string.iptv_download_delete_message, item.title)) },
+            confirmButton = {
+                TextButton(onClick = { vm.deleteDownload(item.id); confirmDelete = false }) {
+                    Text(stringResource(R.string.iptv_download_delete))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDelete = false }) { Text("Sluiten") }
+            },
+        )
+    }
+}
+
+@Composable
+private fun downloadStatus(item: VodDownload): String = when (item.state) {
+    VodDownloadState.QUEUED -> stringResource(R.string.iptv_download_queued)
+    VodDownloadState.RUNNING -> stringResource(R.string.iptv_download_running)
+    VodDownloadState.PAUSED -> stringResource(R.string.iptv_download_paused)
+    VodDownloadState.FAILED -> if (item.error == "not_a_file") {
+        stringResource(R.string.iptv_download_not_a_file)
+    } else if (item.error == "no_space") {
+        stringResource(R.string.iptv_download_no_space)
+    } else {
+        stringResource(R.string.iptv_download_failed)
+    }
+    VodDownloadState.DONE -> stringResource(R.string.iptv_download_done)
+    VodDownloadState.CANCELED -> stringResource(R.string.iptv_download_cancel)
 }

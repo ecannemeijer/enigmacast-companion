@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="iptv_download">Télécharger</string>
+    <string name="iptv_download_season">Télécharger la saison</string>
+    <string name="iptv_download_cancel">Annuler le téléchargement</string>
+    <string name="iptv_download_pause">Pause</string>
+    <string name="iptv_download_resume">Reprendre</string>
+    <string name="iptv_downloads">Téléchargements</string>
+    <string name="iptv_download_queued">En attente</string>
+    <string name="iptv_download_running">Téléchargement</string>
+    <string name="iptv_download_paused">En pause</string>
+    <string name="iptv_download_failed">Échec du téléchargement</string>
+    <string name="iptv_download_done">Téléchargé</string>
+    <string name="iptv_download_no_space">Pas assez d\'espace libre sur ce stockage</string>
+    <string name="iptv_download_delete_title">Supprimer le téléchargement ?</string>
+    <string name="iptv_download_delete_message">Retirer %1$s de ce téléphone ? Le fichier téléchargé sera supprimé.</string>
+    <string name="iptv_download_channel">Téléchargements</string>
+    <string name="iptv_download_season_added">%1$d épisodes ajoutés aux Téléchargements</string>
+    <string name="iptv_download_already">Déjà téléchargé</string>
+    <string name="iptv_download_not_a_file">Ce titre est un flux (HLS/DASH), pas un fichier téléchargeable.</string>
+    <string name="iptv_downloads_empty">Pas encore de films ou d\'épisodes téléchargés. Téléchargez-en un depuis une fiche IPTV.</string>
+    <string name="iptv_download_delete">Supprimer</string>
+    <string name="iptv_season">Saison %1$d</string>
+</resources>

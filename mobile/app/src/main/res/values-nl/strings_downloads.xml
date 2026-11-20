@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="iptv_download">Downloaden</string>
+    <string name="iptv_download_season">Seizoen downloaden</string>
+    <string name="iptv_download_cancel">Download annuleren</string>
+    <string name="iptv_download_pause">Pauzeren</string>
+    <string name="iptv_download_resume">Hervatten</string>
+    <string name="iptv_downloads">Downloads</string>
+    <string name="iptv_download_queued">In de wachtrij</string>
+    <string name="iptv_download_running">Bezig met downloaden</string>
+    <string name="iptv_download_paused">Gepauzeerd</string>
+    <string name="iptv_download_failed">Downloaden is mislukt</string>
+    <string name="iptv_download_done">Gedownload</string>
+    <string name="iptv_download_no_space">Onvoldoende vrije ruimte op deze opslag</string>
+    <string name="iptv_download_delete_title">Download verwijderen?</string>
+    <string name="iptv_download_delete_message">%1$s van deze telefoon verwijderen? Het gedownloade bestand wordt gewist.</string>
+    <string name="iptv_download_channel">Downloads</string>
+    <string name="iptv_download_season_added">%1$d afleveringen toegevoegd aan Downloads</string>
+    <string name="iptv_download_already">Al gedownload</string>
+    <string name="iptv_download_not_a_file">Dit is een stream (HLS/DASH), geen downloadbaar bestand.</string>
+    <string name="iptv_downloads_empty">Nog geen gedownloade films of afleveringen. Download er een vanaf een IPTV-titelpagina.</string>
+    <string name="iptv_download_delete">Verwijderen</string>
+    <string name="iptv_season">Seizoen %1$d</string>
+</resources>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="iptv_download">İndir</string>
+    <string name="iptv_download_season">Sezonu indir</string>
+    <string name="iptv_download_cancel">İndirmeyi iptal et</string>
+    <string name="iptv_download_pause">Duraklat</string>
+    <string name="iptv_download_resume">Sürdür</string>
+    <string name="iptv_downloads">İndirilenler</string>
+    <string name="iptv_download_queued">Bekliyor</string>
+    <string name="iptv_download_running">İndiriliyor</string>
+    <string name="iptv_download_paused">Duraklatıldı</string>
+    <string name="iptv_download_failed">İndirilemedi</string>
+    <string name="iptv_download_done">İndirildi</string>
+    <string name="iptv_download_no_space">Bu depolamada yeterli boş alan yok</string>
+    <string name="iptv_download_delete_title">İndirme silinsin mi?</string>
+    <string name="iptv_download_delete_message">%1$s bu telefondan kaldırılsın mı? İndirilen dosya silinir.</string>
+    <string name="iptv_download_channel">İndirilenler</string>
+    <string name="iptv_download_season_added">İndirilenler\'e %1$d bölüm eklendi</string>
+    <string name="iptv_download_already">Zaten indirildi</string>
+    <string name="iptv_download_not_a_file">Bu başlık bir yayın (HLS/DASH), indirilebilir bir dosya değil.</string>
+    <string name="iptv_downloads_empty">Henüz indirilmiş film veya bölüm yok. Bir IPTV başlık sayfasından indirin.</string>
+    <string name="iptv_download_delete">Sil</string>
+    <string name="iptv_season">Sezon %1$d</string>
+</resources>

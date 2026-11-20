@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="iptv_download">Download</string>
+    <string name="iptv_download_season">Download season</string>
+    <string name="iptv_download_cancel">Cancel download</string>
+    <string name="iptv_download_pause">Pause</string>
+    <string name="iptv_download_resume">Resume</string>
+    <string name="iptv_downloads">Downloads</string>
+    <string name="iptv_download_queued">Waiting</string>
+    <string name="iptv_download_running">Downloading</string>
+    <string name="iptv_download_paused">Paused</string>
+    <string name="iptv_download_failed">Couldn\'t download</string>
+    <string name="iptv_download_done">Downloaded</string>
+    <string name="iptv_download_no_space">Not enough free space on this storage</string>
+    <string name="iptv_download_delete_title">Delete download?</string>
+    <string name="iptv_download_delete_message">Remove %1$s from this phone? The downloaded file will be deleted.</string>
+    <string name="iptv_download_channel">Downloads</string>
+    <string name="iptv_download_season_added">%1$d episodes added to Downloads</string>
+    <string name="iptv_download_already">Already downloaded</string>
+    <string name="iptv_download_not_a_file">This title is a stream (HLS/DASH), not a downloadable file.</string>
+    <string name="iptv_downloads_empty">No downloaded films or episodes yet. Download one from an IPTV title page.</string>
+    <string name="iptv_download_delete">Delete</string>
+    <string name="iptv_season">Season %1$d</string>
+</resources>

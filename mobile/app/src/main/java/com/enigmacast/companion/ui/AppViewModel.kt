@@ -26,6 +26,11 @@ import com.enigmacast.companion.data.PairedTv
 import com.enigmacast.companion.data.TvSnapshot
 import com.enigmacast.companion.data.live.PlayerChannel
 import com.enigmacast.companion.data.library.LibraryItem
+import com.enigmacast.companion.R
+import com.enigmacast.companion.data.LinkState
+import com.enigmacast.companion.data.download.VodReject
+import com.enigmacast.domain.download.VodDownload
+import com.enigmacast.domain.download.VodDownloadState
 import com.enigmacast.companion.data.net.PairingResult
 import com.enigmacast.companion.data.tmdb.TmdbInfo
 import com.enigmacast.companion.data.live.tvReceiverConfig
@@ -211,6 +216,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     var playbackTitle by mutableStateOf("")
         private set
     var playbackUrl by mutableStateOf("")
+    var playbackRecordUrl by mutableStateOf("")
         private set
     var playbackHeaders by mutableStateOf<Map<String, String>>(emptyMap())
         private set
@@ -260,6 +266,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     /** Laatste positie, ook opnieuw verstuurd als de tv even weg was tijdens het stoppen. */
     private var pendingProgress: LibraryCommand? = null
     var library by mutableStateOf(container.library.all())
+        private set
+    var downloads by mutableStateOf(container.downloads.items.value)
+        private set
+    var xtreamSeriesItem by mutableStateOf<XtreamItem?>(null)
         private set
     var recordings by mutableStateOf<List<RecordingEntry>>(emptyList())
         private set
@@ -367,6 +377,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private var lastUpdateCheckMs = 0L
 
     /** The app came to the front: look for an update again when the last check is old. */
+    init {
+        viewModelScope.launch {
+            container.downloads.items.collect { downloads = it }
+        }
+    }
+
     fun onAppResumed() {
         if (updateCheckDue(lastUpdateCheckMs, System.currentTimeMillis())) {
             viewModelScope.launch { refreshUpdate(auto = true) }
@@ -611,9 +627,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         queue: List<PlayerChannel> = emptyList(),
         queueIndex: Int = -1,
         live: Boolean = source == "live",
+        recordUrl: String = url,
     ) {
         playbackTitle = title
         playbackUrl = url
+        playbackRecordUrl = recordUrl.ifBlank { url }
         playbackHeaders = headers
         playbackStartMs = startMs
         playbackSource = source
@@ -647,7 +665,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val duration = if (durationMs > 0L) durationMs else 0L
         library = container.library.record(
             title = playbackTitle,
-            url = playbackUrl,
+            url = playbackLibraryUrl,
             positionMs = position,
             durationMs = duration,
             source = playbackSource,
@@ -657,12 +675,23 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         )
         val ref = playbackRef ?: return
         val now = System.currentTimeMillis()
+        container.libraryOutbox.enqueueProgress(
+            profileId = snapshot.activeProfileId,
+            source = ref.source,
+            kind = ref.kind,
+            id = ref.id,
+            title = playbackTitle,
+            url = playbackLibraryUrl,
+            positionMs = position,
+            durationMs = duration,
+        )
         if (force || now - lastLibrarySyncMs >= 10_000L) {
+            flushLibraryOutbox()
             val command = LibraryCommand(
                 action = LibraryAction.PROGRESS,
                 entry = LibraryEntry(
                     title = playbackTitle,
-                    url = playbackUrl,
+                    url = playbackLibraryUrl,
                     source = ref.source,
                     kind = ref.kind,
                     id = ref.id,
@@ -684,7 +713,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun toggleFavorite(url: String = playbackUrl) {
+    fun toggleFavorite(url: String = playbackLibraryUrl) {
         if (url.isBlank()) return
         if (container.library.all().none { it.url == url }) {
             library = container.library.record(playbackTitle, url, 0L, 0L, playbackSource)
@@ -988,6 +1017,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         xtreamSection = XtreamSection.LIVE
         xtreamEpisodes = emptyList()
         xtreamSeriesTitle = null
+        xtreamSeriesItem = null
         viewModelScope.launch {
             container.xtream.login(cleanServer, username.trim(), password).fold(
                 onSuccess = { account ->
@@ -1079,6 +1109,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun openXtreamSeries(item: XtreamItem) {
         val account = xtreamAccount ?: return
+        xtreamSeriesItem = item
         xtreamSeriesTitle = item.name
         xtreamEpisodes = emptyList()
         xtreamLoading = true
@@ -1093,6 +1124,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun closeXtreamSeries() {
+        xtreamSeriesItem = null
         xtreamSeriesTitle = null
         xtreamEpisodes = emptyList()
     }
@@ -1120,9 +1152,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             emptyList()
         }
         val index = queue.indexOfFirst { it.id == item.id }
+        val remote = container.xtream.streamUrl(account, item)
+        val local = if (item.section == XtreamSection.MOVIES) {
+            localDownloadUrl(account.key, "m", item.id)
+        } else {
+            null
+        }
         playUrl(
             title = item.name,
-            url = container.xtream.streamUrl(account, item),
+            url = local ?: remote,
             source = "iptv",
             returnTo = AppScreen.XTREAM,
             ref = if (item.section == XtreamSection.MOVIES) {
@@ -1133,6 +1171,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             queue = queue,
             queueIndex = index,
             live = item.section == XtreamSection.LIVE,
+            recordUrl = remote,
         )
     }
 
@@ -1188,12 +1227,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             "S${episode.season}E${episode.episode}",
             episode.title,
         ).joinToString(" · ")
+        val remote = container.xtream.episodeUrl(account, episode)
         playUrl(
-            title,
-            container.xtream.episodeUrl(account, episode),
+            title = title,
+            url = localDownloadUrl(account.key, "e", episode.id) ?: remote,
             source = "iptv",
             returnTo = AppScreen.XTREAM,
             ref = LibraryRef(account.key, "e", episode.id),
+            recordUrl = remote,
         )
     }
 
@@ -1684,6 +1725,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 pendingProgress?.let { command ->
                     send(ProtocolJson.envelope(MessageType.CMD_LIBRARY, command, id = nextId()))
                 }
+                flushLibraryOutbox(force = true)
                 snapshot = snapshot.copy(
                     tvName = hello.tv.name,
                     appVersion = hello.tv.app,
@@ -1862,6 +1904,105 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun nextId(): String = "c-${++nextId}"
+
+
+    val playbackLibraryUrl: String
+        get() = playbackRecordUrl.ifBlank { playbackUrl }
+
+    fun downloadFor(source: String, kind: String, id: String): VodDownload? =
+        downloads.firstOrNull { it.source == source && it.kind == kind && it.streamId == id }
+            ?: container.downloads.of(source, kind, id)
+
+    fun downloadForInfo(): VodDownload? {
+        val item = infoItem ?: return null
+        val account = xtreamAccount ?: return null
+        if (item.section != XtreamSection.MOVIES) return null
+        return downloadFor(account.key, "m", item.id)
+    }
+
+    fun downloadForEpisode(episode: com.enigmacast.domain.xtream.XtreamEpisode): VodDownload? {
+        val account = xtreamAccount ?: return null
+        return downloadFor(account.key, "e", episode.id)
+    }
+
+    private fun localDownloadUrl(source: String, kind: String, id: String): String? =
+        downloadFor(source, kind, id)?.let { container.downloads.fileUri(it) }
+
+    fun enqueueInfoDownload() {
+        val item = infoItem ?: return
+        val account = xtreamAccount ?: return
+        if (item.section != XtreamSection.MOVIES) return
+        when (container.downloads.enqueueMovie(account, item)) {
+            VodReject.NOT_A_FILE -> showToast(getApplication<Application>().getString(R.string.iptv_download_not_a_file), "error")
+            null -> showToast(getApplication<Application>().getString(R.string.iptv_download_queued), "ok")
+        }
+    }
+
+    fun enqueueEpisodeDownload(episode: com.enigmacast.domain.xtream.XtreamEpisode) {
+        val account = xtreamAccount ?: return
+        val show = xtreamSeriesItem ?: XtreamItem(id = "", name = xtreamSeriesTitle.orEmpty(), section = XtreamSection.SERIES, categoryId = "")
+        when (container.downloads.enqueueEpisode(account, show, episode, container.xtream.episodeUrl(account, episode))) {
+            VodReject.NOT_A_FILE -> showToast(getApplication<Application>().getString(R.string.iptv_download_not_a_file), "error")
+            null -> showToast(getApplication<Application>().getString(R.string.iptv_download_queued), "ok")
+        }
+    }
+
+    fun enqueueSeasonDownload(season: Int) {
+        val account = xtreamAccount ?: return
+        val show = xtreamSeriesItem ?: return
+        val added = container.downloads.enqueueSeason(account, show, season, xtreamEpisodes) { episode ->
+            container.xtream.episodeUrl(account, episode)
+        }
+        if (added == 0) {
+            showToast(getApplication<Application>().getString(R.string.iptv_download_not_a_file), "error")
+        } else {
+            showToast(getApplication<Application>().getString(R.string.iptv_download_season_added, added), "ok")
+        }
+    }
+
+    fun playDownload(item: VodDownload) {
+        val uri = container.downloads.fileUri(item)
+        if (uri.isNullOrBlank()) {
+            if (item.state == VodDownloadState.PAUSED || item.state == VodDownloadState.FAILED) {
+                container.downloads.resume(item.id)
+            }
+            return
+        }
+        val saved = library.firstOrNull {
+            it.tvSource == item.source && it.tvKind == item.kind && it.tvId == item.streamId
+        }
+        playUrl(
+            title = item.title,
+            url = uri,
+            startMs = saved?.positionMs ?: 0L,
+            source = "iptv",
+            returnTo = AppScreen.LIBRARY,
+            ref = LibraryRef(item.source, item.kind, item.streamId),
+            recordUrl = item.url,
+        )
+    }
+
+    fun pauseDownload(id: String) = container.downloads.pause(id)
+    fun resumeDownload(id: String) = container.downloads.resume(id)
+    fun cancelDownload(id: String) = container.downloads.cancel(id)
+    fun deleteDownload(id: String) = container.downloads.delete(id)
+
+    fun flushLibraryOutbox(force: Boolean = false) {
+        val batch = container.libraryOutbox.batch()
+        if (batch.send.isEmpty()) {
+            if (batch.settled.isNotEmpty()) container.libraryOutbox.settle(batch.settled)
+            return
+        }
+        val connected = force || link.value.state == LinkState.READY
+        if (!connected) return
+        batch.send.forEach { row ->
+            val command = container.libraryOutbox.commandFor(row) ?: return@forEach
+            pendingProgress = command
+            send(ProtocolJson.envelope(MessageType.CMD_LIBRARY, command, id = nextId()))
+        }
+        container.libraryOutbox.settle(batch.settled)
+    }
+
 
     private companion object {
         const val MAX_PHOTO_BYTES = 10 * 1024 * 1024

@@ -8,4 +8,6 @@ enum class CompanionLanguage(val tag: String, val label: String) {
     GERMAN("de", "Deutsch"),
     FRENCH("fr", "Français"),
     ITALIAN("it", "Italiano"),
+    TURKISH("tr", "Türkçe"),
+    POLISH("pl", "Polski"),
 }
